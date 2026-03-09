@@ -7,6 +7,79 @@ const { parse } = require('json2csv');
 // Delay helper
 const sleep = (ms) => new Promise(res => setTimeout(res, ms));
 
+// Your slugify function remains the same (no changes needed)
+// ... paste your full slugify here ...
+
+// Extract discipline rank (unchanged)
+function getDisciplineRank($, discipline) {
+  return $(`a[href*="discipline=${discipline}"] .ranking-number`)
+    .first()
+    .text()
+    .trim() || null;
+}
+
+function convertCSVtoJSON(csvPath, jsonPath) {
+  return new Promise((resolve, reject) => {
+    const results = [];
+
+    fs.createReadStream(csvPath)
+      .pipe(csv())
+      .on("data", (row) => results.push(row))
+      .on("end", () => {
+        fs.writeFileSync(jsonPath, JSON.stringify(results, null, 2));
+        console.log(`💾 Converted ${csvPath} → ${jsonPath}`);
+        resolve(results);
+      })
+      .on("error", reject);
+  });
+}
+
+// Scrape a single athlete page – now takes gender as argument
+async function scrapeAthlete(url, nameR, gender) {
+  try {
+    const { data } = await axios.get(url, {
+      headers: { "User-Agent": "Mozilla/5.0" }
+    });
+
+    const $ = cheerio.load(data);
+
+    // Optional: scrape the displayed name to verify
+    const displayedName = $('h1').first().text().trim() || nameR;
+
+    const swimRanking = getDisciplineRank($, 'swim');
+    const bikeRanking = getDisciplineRank($, 'bike');
+    const runRanking  = getDisciplineRank($, 'run');
+
+    const ptoRanking =
+      $('a.rank--world .ranking-number').text().trim() ||
+      $('div.attribute.rank.rank--world .ranking-number').text().trim() ||
+      null;
+
+    const country = $('div.attribute.country .name').text().trim() || null;
+
+    const profilePic =
+      $('img[data-src]').attr('data-src') ||
+      $('img[data-src]').attr('src') ||
+      $('picture img').attr('src') ||
+      null;
+
+    return {
+      name: nameR,           // use original CSV name
+      gender,                // M or F from CSV
+      ptoRanking,
+      swimRanking,
+      bikeRanking,
+      runRanking,
+      country,
+      profilePicture: profilePic
+    };
+
+  } catch (err) {
+    console.error(`❌ Error scraping ${url} (${nameR}):`, err.message);
+    return null;
+  }
+}
+
 // Convert "Morgan Pearson" → "morgan-pearson"
 function slugify(name) {
   const overrides = {
@@ -18,12 +91,12 @@ function slugify(name) {
     "simone dailey": "Simone Mitchell",
     "franzi hofmann": "Franzi Reng",
     "brittany vocke": "Britt Vocke",
-    "cassie heaslip": "Cassandra Heaslip", 
-    "sophia stückrad deboy": "Sophia Stueckrad", 
+    "cassie heaslip": "Cassandra Heaslip",
+    "sophia stückrad deboy": "Sophia Stueckrad",
     "katie spoelman-vanacker": "Katie Spoelman Vana",
-    "katharina krüger": "Katharina Krueger", 
-    "kimberley halton-farrow": "Kimberley Morrison", 
-    "aitziber urkiola zendoia" : "Urkiola Aitziber", 
+    "katharina krüger": "Katharina Krueger",
+    "kimberley halton-farrow": "Kimberley Morrison",
+    "aitziber urkiola zendoia": "Urkiola Aitziber",
     "kristian høgenhaug": "Kristian-Hogenhaug",
     "wilhelm hirsch": "Willhelm Hirsch",
     "guillem montiel": "Montiel Moreno Guillem",
@@ -41,129 +114,83 @@ function slugify(name) {
     "mikel gomez martinez de manso": "Mikel Gomez Manso",
   };
 
-  // Normalize for matching
   const key = name.trim().toLowerCase();
-
-  // Apply override if exists
   const finalName = overrides[key] || name;
 
-  // PTO-style slug rules
   return finalName
-    .normalize("NFD")                     // split accents
-    .replace(/[\u0300-\u036f]/g, "")      // remove accents
-    .replace(/ß/g, "ss")                  // German sharp S
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/ß/g, "ss")
     .replace(/ä/g, "ae")
     .replace(/ö/g, "oe")
     .replace(/ü/g, "ue")
     .replace(/Ä/g, "ae")
     .replace(/Ö/g, "oe")
     .replace(/Ü/g, "ue")
-    .replace(/ø/g, "oe")                  // Scandinavian
+    .replace(/ø/g, "oe")
     .replace(/Ø/g, "oe")
     .replace(/å/g, "aa")
     .replace(/Å/g, "aa")
-    .replace(/æ/g, "ae")                  // Scandinavian
+    .replace(/æ/g, "ae")
     .replace(/Æ/g, "ae")
-    .replace(/[^a-zA-Z0-9\s-]/g, "")      // remove punctuation but keep hyphens
+    .replace(/[^a-zA-Z0-9\s-]/g, "")
     .trim()
-    .replace(/\s+/g, "-") 
-    .replace(/ss/g, "ß")                     // spaces → hyphens
+    .replace(/\s+/g, "-")
     .toLowerCase();
 }
-
-
-// Extract discipline rank
-function getDisciplineRank($, discipline) {
-  return $(`a[href*="discipline=${discipline}"] .ranking-number`)
-    .first()
-    .text()
-    .trim() || null;
-}
-
-// Scrape a single athlete page
-async function scrapeAthlete(url) {
-  try {
-    const { data } = await axios.get(url, {
-      headers: { "User-Agent": "Mozilla/5.0" }
-    });
-
-    const $ = cheerio.load(data);
-
-    const name = $('h1').first().text().trim();
-
-    const swimRank = getDisciplineRank($, 'swim');
-    const bikeRank = getDisciplineRank($, 'bike');
-    const runRank  = getDisciplineRank($, 'run');
-
-    const worldRank =
-      $('a.rank--world .ranking-number').text().trim() ||
-      $('div.attribute.rank.rank--world .ranking-number').text().trim() ||
-      null;
-
-    const country = $('div.attribute.country .name').text().trim() || null;
-
-    const profilePic =
-      $('img[data-src]').attr('data-src') ||
-      $('img[data-src]').attr('src') ||
-      $('picture img').attr('src') ||
-      null;
-
-    return {
-      name,
-      worldRank,
-      swimRank,
-      bikeRank,
-      runRank,
-      country,
-      profilePic,
-      url
-    };
-
-  } catch (err) {
-    console.error(`❌ Error scraping ${url}:`, err.message);
-    return null;
-  }
-}
-
-// Load names from CSV
-function loadNamesFromCSV(path) {
+// Load names + gender from CSV
+function loadAthletesFromCSV(path) {
   return new Promise((resolve, reject) => {
-    const names = [];
+    const athletes = [];
     fs.createReadStream(path)
       .pipe(csv())
       .on('data', row => {
-        if (row.name) names.push(row.name);
+        if (row.name) {
+          athletes.push({
+            name: row.name.trim(),
+            gender: (row.gender || '').trim().toUpperCase()   // ensure M or F
+          });
+        }
       })
-      .on('end', () => resolve(names))
+      .on('end', () => resolve(athletes))
       .on('error', reject);
   });
 }
 
 // Main runner
 async function run() {
-  console.log("📥 Loading names from CSV...");
-  const names = await loadNamesFromCSV('tri fanta - mens names.csv');
+  console.log("📥 Loading athletes from CSV...");
+  const athletesList = await loadAthletesFromCSV('pto_all_names.csv');
 
-  console.log(`Loaded ${names.length} names.`);
+  console.log(`Loaded ${athletesList.length} athletes.`);
 
   const results = [];
 
-  for (const name of names) {
+  for (const { name, gender } of athletesList) {
+    if (!['M', 'F'].includes(gender)) {
+      console.warn(`⚠️ Skipping ${name} – invalid/missing gender: "${gender}"`);
+      continue;
+    }
+
     const slug = slugify(name);
     const url = `https://stats.protriathletes.org/athlete/${slug}`;
 
-    console.log(`🔍 Scraping: ${name} → ${url}`);
+    console.log(`🔍 Scraping: ${name} (${gender}) → ${url}`);
 
-    const data = await scrapeAthlete(url);
+    const data = await scrapeAthlete(url, name, gender);
     if (data) results.push(data);
 
-    await sleep(500); // polite delay
+    await sleep(800); // slightly longer delay to be polite
   }
 
-  const csvOut = parse(results);
-  fs.writeFileSync('athletes_output.csv', csvOut);
-
-  console.log("✅ Done! Saved athletes_output.csv");
+  if (results.length > 0) {
+    const csvOut = parse(results);
+    fs.writeFileSync('athletes_output.csv', csvOut);
+    await convertCSVtoJSON("athletes_output.csv", "athletes_output.json");
+    console.log(`✅ Done! Processed ${results.length} athletes. Saved athletes_output.csv and .json`);
+  } else {
+    console.log("⚠️ No valid data scraped.");
+  }
 }
 
-run();
+run().catch(err => console.error("Script failed:", err));
