@@ -21,36 +21,17 @@ const resultSchema = new mongoose.Schema({
         min: [1, "Place must be at least 1"], 
         index: true
     },
-    dnf:{
-        type: Boolean,
-        default: false
-    },
-    dns:{
-        type: Boolean,
-        default: false
-    },
-    dsq:{
-        type: Boolean,
-        default: false
-    },
-    swimTime: {
+
+    swimPlace: {
         type: Number,
-        required: true,
         min: [0, "Time cannot be negative"]
     },
-    bikeTime: {
+    bikePlace: {
         type: Number,
-        required: true,
         min: [0, "Time cannot be negative"]
     },
-    runTime: {
+    runPlace: {
         type: Number,
-        required: true,
-        min: [0, "Time cannot be negative"]
-    },
-    totalTime: {
-        type: Number,
-        required: true,
         min: [0, "Time cannot be negative"]
     },
     status: {
@@ -62,10 +43,21 @@ const resultSchema = new mongoose.Schema({
         type: Number,
         default: 0,
     },
-    courseRecord: {
-        type: Number,
-        default: null,
-        min: [0, "cannot be negative"]
+    totalTime: {
+        type: Number, // in seconds
+        min: [0, "Time cannot be negative"]
+    },
+    swimTime: {
+        type: Number, // in seconds
+        min: [0, "Time cannot be negative"]
+    },
+    bikeTime: {
+        type: Number, // in seconds
+        min: [0, "Time cannot be negative"]
+    },
+    runTime: {
+        type: Number, // in seconds
+        min: [0, "Time cannot be negative"]
     }
 }, { timestamps: true });
 

@@ -1,0 +1,615 @@
+API Endpoint JSON Reference
+
+This document provides example JSON request and response bodies for all major API endpoints across the Auth, Users, Races, Leagues, Picks, and Leaderboards modules.
+
+AUTH ENDPOINTS
+
+POST /auth/login
+
+Request:
+
+{
+  "email": "sury@example.com",
+  "password": "mypassword123"
+}
+
+Response:
+
+{
+  "token": "ACCESS_TOKEN_HERE",
+  "refreshToken": "REFRESH_TOKEN_HERE",
+  "user": {
+    "_id": "65f1c2...",
+    "name": "Sury",
+    "email": "sury@example.com"
+  }
+}
+
+POST /auth/refresh
+
+Request:
+
+{
+  "refreshToken": "REFRESH_TOKEN_HERE"
+}
+
+Response:
+
+{
+  "token": "NEW_ACCESS_TOKEN"
+}
+
+POST /auth/logout
+
+Request:
+
+{
+  "userId": "65f1c2..."
+}
+
+Response:
+
+{
+  "message": "Logged out"
+}
+
+POST /auth/google
+
+Request:
+
+{
+  "token": "GOOGLE_ID_TOKEN"
+}
+
+Response: Same as login.
+
+POST /auth/forgotPassword
+
+Request:
+
+{
+  "email": "sury@example.com"
+}
+
+Response:
+
+{
+  "message": "If that email exists, a reset link was sent"
+}
+
+POST /auth/resetPassword
+
+Request:
+
+{
+  "token": "RESET_TOKEN",
+  "newPassword": "newStrongPassword123"
+}
+
+Response:
+
+{
+  "message": "Password reset successful"
+}
+
+USER ENDPOINTS
+
+POST /users
+
+Request:
+
+{
+  "name": "Sury",
+  "email": "sury@example.com",
+  "password": "mypassword123"
+}
+
+Response:
+
+{
+  "_id": "65f1c2...",
+  "name": "Sury",
+  "email": "sury@example.com"
+}
+
+POST /users/:id/changePassword
+
+Request:
+
+{
+  "oldPassword": "mypassword123",
+  "newPassword": "newStrongPassword123"
+}
+
+Response:
+
+{
+  "message": "Password updated successfully"
+}
+
+PATCH /users/:id/updateProfile
+
+Request:
+
+{
+  "name": "Sury Yadav",
+  "email": "newemail@example.com",
+  "avatar": "https://example.com/avatar.png",
+  "bio": "Triathlete and developer"
+}
+
+Response:
+
+{
+  "_id": "65f1c2...",
+  "name": "Sury Yadav",
+  "email": "newemail@example.com",
+  "avatar": "https://example.com/avatar.png",
+  "bio": "Triathlete and developer"
+}
+
+DELETE /users/:id/deleteAccount
+
+Request:
+
+{
+  "userId": "65f1c2..."
+}
+
+Response:
+
+{
+  "message": "Account deleted successfully"
+}
+
+GET /users/:id/settings
+
+Response:
+
+{
+  "name": "Sury",
+  "email": "sury@example.com",
+  "avatar": null,
+  "bio": "",
+  "createdAt": "2026-04-13T22:00:00Z"
+}
+
+PATCH /users/:id/settings
+
+Request:
+
+{
+  "avatar": "https://example.com/newAvatar.png",
+  "bio": "Updated bio"
+}
+
+Response:
+
+{
+  "_id": "65f1c2...",
+  "avatar": "https://example.com/newAvatar.png",
+  "bio": "Updated bio"
+}
+
+GET /users/:id/preferences
+
+Response:
+
+{
+  "theme": "light",
+  "notifications": true
+}
+
+PATCH /users/:id/preferences
+
+Request:
+
+{
+  "theme": "dark",
+  "notifications": false
+}
+
+Response:
+
+{
+  "theme": "dark",
+  "notifications": false
+}
+
+GET /users/:id/security
+
+Response:
+
+{
+  "email": "sury@example.com",
+  "createdAt": "2026-04-13T22:00:00Z",
+  "lastUpdated": "2026-04-14T00:00:00Z",
+  "loginMethods": ["password", "google"]
+}
+
+GET /users/:id/activity
+
+Response:
+
+{
+  "leaguesJoined": [
+    { "name": "DFW Tri Legends", "createdAt": "2026-01-01T00:00:00Z" }
+  ],
+  "recentPicks": [
+    {
+      "_id": "pick123",
+      "race": {
+        "name": "T100 Miami",
+        "date": "2026-03-10",
+        "series": "T100"
+      }
+    }
+  ]
+}
+
+RACE ENDPOINTS
+
+POST /races
+
+Request:
+
+{
+  "name": "T100 Miami 2026",
+  "location": "Miami, FL",
+  "date": "2026-03-10",
+  "series": "T100",
+  "gender": "M"
+}
+
+Response:
+
+{
+  "message": "Created 1 race(s)",
+  "races": [
+    {
+      "_id": "race123",
+      "name": "T100 Miami 2026",
+      "status": "Upcoming"
+    }
+  ]
+}
+
+GET /races
+
+Response:
+
+[
+  {
+    "id": "race123",
+    "name": "T100 Miami 2026",
+    "location": "Miami, FL",
+    "date": "2026-03-10",
+    "status": "Upcoming",
+    "gender": "M",
+    "hasStartList": false,
+    "hasResults": false
+  }
+]
+
+PUT /races/:id
+
+Request:
+
+{
+  "status": "Closed",
+  "notes": "Weather delay"
+}
+
+Response:
+
+{
+  "_id": "race123",
+  "name": "T100 Miami 2026",
+  "status": "Closed",
+  "notes": "Weather delay"
+}
+
+LEAGUE ENDPOINTS
+
+POST /leagues
+
+Request:
+
+{
+  "name": "DFW Tri Legends",
+  "adminId": "65f1c2...",
+  "isPrivate": true,
+  "password": "leagueSecret123"
+}
+
+Response:
+
+{
+  "_id": "league123",
+  "name": "DFW Tri Legends",
+  "admin": "65f1c2...",
+  "members": ["65f1c2..."],
+  "isPrivate": true
+}
+
+POST /leagues/:id/join
+
+Request:
+
+{
+  "userId": "65f1c3...",
+  "password": "leagueSecret123"
+}
+
+Response:
+
+{
+  "message": "Joined league",
+  "league": {
+    "_id": "league123",
+    "members": ["65f1c2...", "65f1c3..."]
+  }
+}
+
+POST /leagues/join/:inviteCode
+
+Request:
+
+{
+  "userId": "65f1c3..."
+}
+
+Response:
+
+{
+  "message": "Joined league via invite",
+  "league": {
+    "_id": "league123",
+    "members": ["65f1c2...", "65f1c3..."]
+  }
+}
+
+POST /leagues/:id/leave
+
+Request:
+
+{
+  "userId": "65f1c3..."
+}
+
+Response:
+
+{
+  "message": "Left league successfully"
+}
+
+POST /leagues/:id/transferAdmin
+
+Request:
+
+{
+  "userId": "65f1c2...",
+  "newAdminId": "65f1c3..."
+}
+
+Response:
+
+{
+  "message": "Admin transferred",
+  "league": {
+    "_id": "league123",
+    "admin": "65f1c3..."
+  }
+}
+
+DELETE /leagues/:id
+
+Request:
+
+{
+  "userId": "65f1c2..."
+}
+
+Response:
+
+{
+  "message": "League deleted"
+}
+
+PATCH /leagues/:id/settings
+
+Request:
+
+{
+  "userId": "65f1c2...",
+  "scoringStructure": {
+    "ironman703": 3,
+    "ironman": 4,
+    "t100": 3,
+    "wtcs": 1,
+    "bonusRace": 1
+  }
+}
+
+Response:
+
+{
+  "message": "Settings updated",
+  "league": {
+    "_id": "league123",
+    "settings": {
+      "scoringStructure": {
+        "ironman703": 3,
+        "ironman": 4,
+        "t100": 3,
+        "wtcs": 1,
+        "bonusRace": 1
+      }
+    }
+  }
+}
+
+GET /leagues/search?q=dfw
+
+Response:
+
+[
+  {
+    "_id": "league123",
+    "name": "DFW Tri Legends",
+    "isPrivate": false,
+    "members": ["65f1c2..."],
+    "inviteCode": "ABC123"
+  }
+]
+
+GET /leagues/my/:userId
+
+Response:
+
+[
+  {
+    "_id": "league123",
+    "name": "DFW Tri Legends",
+    "isPrivate": true,
+    "admin": "65f1c2...",
+    "members": ["65f1c2...", "65f1c3..."],
+    "inviteCode": "ABC123",
+    "settings": {
+      "scoringStructure": {
+        "ironman703": 3,
+        "ironman": 4,
+        "t100": 3,
+        "wtcs": 1,
+        "bonusRace": 1
+      }
+    }
+  }
+]
+
+GET /leagues/:id/standings
+
+Response:
+
+{
+  "league": "DFW Tri Legends",
+  "standings": [
+    {
+      "userId": "65f1c2...",
+      "name": "Sury",
+      "total": 780,
+      "breakdown": {
+        "ironman703": [200, 180],
+        "ironman": [300],
+        "t100": [100],
+        "wtcs": [],
+        "bonusRace": []
+      }
+    }
+  ]
+}
+
+GET /leagues/:id/leaderboard
+
+Response:
+
+{
+  "league": "DFW Tri Legends",
+  "leaderboard": [
+    {
+      "userId": "65f1c2...",
+      "name": "Sury",
+      "total": 3200,
+      "races": [
+        {
+          "raceId": "race123",
+          "raceName": "T100 Miami 2026",
+          "series": "T100",
+          "score": 220
+        }
+      ]
+    }
+  ]
+}
+
+LEADERBOARD ENDPOINTS
+
+GET /leaderboard/global
+
+Response:
+
+{
+  "season": "2026",
+  "leaderboard": [
+    {
+      "userId": "65f1c2...",
+      "name": "Sury",
+      "totalPoints": 1280,
+      "picksCount": 12
+    }
+  ]
+}
+
+GET /leaderboard/race/:raceId
+
+Response:
+
+{
+  "race": {
+    "name": "T100 Miami 2026",
+    "series": "T100"
+  },
+  "leaderboard": [
+    {
+      "userId": "65f1c2...",
+      "name": "Sury",
+      "score": 220
+    }
+  ]
+}
+
+GET /leaderboard/league/:leagueId
+
+Response:
+
+{
+  "league": "DFW Tri Legends",
+  "leaderboard": [
+    {
+      "userId": "65f1c2...",
+      "name": "Sury",
+      "total": 3200
+    }
+  ]
+}
+
+GET /leaderboard/league/:id/season?season=2026
+
+Response:
+
+{
+  "league": "DFW Tri Legends",
+  "season": "2026",
+  "standings": [
+    {
+      "userId": "65f1c2...",
+      "name": "Sury",
+      "total": 780
+    }
+  ]
+}
+
+GET /leaderboard/league/:id/alltime
+
+Response:
+
+{
+  "league": "DFW Tri Legends",
+  "leaderboard": [
+    {
+      "userId": "65f1c2...",
+      "name": "Sury",
+      "total": 3200
+    }
+  ]
+}
