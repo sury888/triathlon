@@ -171,11 +171,46 @@ const COUNTRY_FULL_NAMES = {
   AEG: "Egypt",
   UAE: "United Arab Emirates",
   IND: "India",
-  KOR: "South Korea",
+  KOR: "Republic of Korea",
   Australia: "Australia",
-
+  UKR: "Ukraine",
+  MEX: "Mexico", 
+  ISR: "Israel",
+  URU: "Uruguay",
+  ARG: "Argentina",
+  COL: "Colombia",
+  PER: "Peru",
+  SRB: "Serbia",
+  ROM: "Romania",
+  SVK: "Slovakia",
+  SVN: "Slovenia",
+  AIN: "Individual Neutral Athlete",
+  CHI: "Chile",
+  MAR: "Morocco",
+  UZB: "Uzbekistan",
+  TRI: "World Triathlon",
+  VIE: "Vietnam",
+  PHI: "Philippines",
+  THA: "Thailand",
+  EGY: "Egypt",
+  QAT: "Qatar",
+  VEN: "Venezuela",
+  BER: "Bermuda",
+  TPE: "Chinese Taipei",
+  ZAF: "South Africa",
+  EST: "Estonia",
+  LUX: "Luxembourg",
+  EST: "Estonia",
+  SRB: "Serbia"
   // add more as needed
 };
+
+function normalizeCountry(codeOrName) {
+  if (!codeOrName) return null;
+  const trimmed = codeOrName.trim();
+  const upper = trimmed.toUpperCase();
+  return COUNTRY_FULL_NAMES[upper] || trimmed;
+}
 
 exports.updateStartList = async (req, res) => {
   try {
@@ -238,7 +273,8 @@ exports.updateStartList = async (req, res) => {
       } else {
         startListEntries.push({
           athlete: athleteId,
-          startRank: item.startRank
+          startRank: item.startRank,
+          athleteName: item.name // denormalized for easier access
         });
       }
     });
@@ -434,10 +470,14 @@ exports.processResults = async (req, res) => {
     for (const resEntry of inputResults) {
       if (!resEntry.name || !resEntry.country) continue;
 
+      // Normalize country BEFORE matching
+      const normalizedCountry = normalizeCountry(resEntry.country);
+
       const athlete = await Athlete.findOne({
         name: { $regex: new RegExp(`^${resEntry.name.trim()}$`, "i") },
-        country: { $regex: new RegExp(`^${resEntry.country.trim()}$`, "i") }
+        country: { $regex: new RegExp(`^${normalizedCountry}$`, "i") }
       }).select("_id name gender country");
+
 
       if (!athlete) {
         unmatchedAthletes.push({

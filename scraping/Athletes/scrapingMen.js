@@ -37,13 +37,15 @@ function convertCSVtoJSON(csvPath, jsonPath) {
 // Scrape a single athlete page – now takes gender as argument
 async function scrapeAthlete(url, nameR, gender) {
   try {
+    const DEFAULT_PROFILE_PIC =
+      "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_640.png";
+
     const { data } = await axios.get(url, {
       headers: { "User-Agent": "Mozilla/5.0" }
     });
 
     const $ = cheerio.load(data);
 
-    // Optional: scrape the displayed name to verify
     const displayedName = $('h1').first().text().trim() || nameR;
 
     const swimRanking = getDisciplineRank($, 'swim');
@@ -57,15 +59,20 @@ async function scrapeAthlete(url, nameR, gender) {
 
     const country = $('div.attribute.country .name').text().trim() || null;
 
-    const profilePic =
+    let profilePic =
       $('img[data-src]').attr('data-src') ||
       $('img[data-src]').attr('src') ||
       $('picture img').attr('src') ||
       null;
 
+    // Apply fallback
+    if (!profilePic || profilePic.trim() === "") {
+      profilePic = DEFAULT_PROFILE_PIC;
+    }
+
     return {
-      name: nameR,           // use original CSV name
-      gender,                // M or F from CSV
+      name: nameR,
+      gender,
       ptoRanking,
       swimRanking,
       bikeRanking,
@@ -79,6 +86,7 @@ async function scrapeAthlete(url, nameR, gender) {
     return null;
   }
 }
+
 
 // Convert "Morgan Pearson" → "morgan-pearson"
 function slugify(name) {
@@ -112,6 +120,8 @@ function slugify(name) {
     "ander irigoyen egia": "Ander Irigoien Egia",
     "thomas davies": "Tom Davies",
     "mikel gomez martinez de manso": "Mikel Gomez Manso",
+    "benjamen randall": "Ben Randall",
+    "sophie evans": "Sophie Coldwell"
   };
 
   const key = name.trim().toLowerCase();

@@ -38,6 +38,12 @@ const athleteSchema = new mongoose.Schema(
       min: 0,
       default: null,
     },
+    starts: { type: Number, min: 0, default: 0 },
+    podiums: { type: Number, min: 0, default: 0 },
+    wins: { type: Number, min: 0, default: 0 },
+    podiumPct: { type: String, default: "0" }, // stored as string to preserve formatting like "12.3"
+    winPct: { type: String, default: "0" },
+    wtcsid: { type: Number, unique: true, sparse: true }, // unique if present, but can be null for non-WTCS athletes
     swimRanking: { type: Number, min: 0, default: null },
     bikeRanking: { type: Number, min: 0, default: null },
     runRanking:  { type: Number, min: 0, default: null },
@@ -107,7 +113,12 @@ const athleteSchema = new mongoose.Schema(
       type: Map,
       of: Number, // e.g. "2026": 385, "2025": 612
       default: () => new Map(),
-    }
+    },
+    sources: {
+  type: [String], // ["long", "short"]
+  default: []
+}
+
 
 
   },

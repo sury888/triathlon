@@ -9,6 +9,7 @@ const raceRoutes = require('./routes/race.routes');
 const leagueRoutes = require('./routes/league.routes');
 const pickRoutes = require('./routes/pick.routes');
 const leaderboardRoutes = require('./routes/leaderboard.routes');
+const athleteRoutes = require('./routes/athletes.routes');
 
 require('./utils/cron');
 
@@ -28,6 +29,7 @@ app.use('/races', raceRoutes);
 app.use('/leagues', leagueRoutes);
 app.use('/picks', pickRoutes);
 app.use('/leaderboard', leaderboardRoutes);
+app.use('/athletes', athleteRoutes);
 
 connectDB().then(() => {
   app.listen(PORT, () => console.log(`Server running on ${PORT}`));
