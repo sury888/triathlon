@@ -1,7 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const athletes = require("../controllers/athleteController");
+const {authMiddleware, adminOnly} = require("../middleware/auth");
 
-router.post("/", athletes.createOrUpsertAthletes);
+
+router.post("/", authMiddleware, adminOnly, athletes.createOrUpsertAthletes);
 
 module.exports = router;

@@ -1,6 +1,17 @@
 const cron = require('node-cron');
 const Race = require('../models/Race');
 
+let cron;
+try{
+  cron = require('node-cron');
+} catch{
+  cron ={
+    schedule: () => {
+      console.warn('node-cron not available, skipping scheduled tasks');
+  }
+};
+}
+
 cron.schedule('*/15 * * * *', async () => {
   try {
     const now = new Date();

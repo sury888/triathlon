@@ -1,406 +1,423 @@
 // controllers/leagueController.js
+const Pick = require('../models/Pick');
+const Race = require('../models/Race');
+const User = require('../models/User');
+const Athlete = require('../models/Athlete');
+const League = require('../models/League');
+const { classifyRaceType } = require('../utils/classifyRace');
 
 exports.createLeague = async (req, res) => {
- try {
-    const { name, isPrivate, password, adminId } = req.body;
+try {
+const { name, isPrivate, password, adminId } = req.body;
 
-    if (!name || !adminId) {
-      return res.status(400).json({ error: "Name and adminId are required" });
-    }
+if (!name || !adminId) {
+return res.status(400).json({ error: "Name and adminId are required" });
+}
 
-    const league = await League.create({
-      name,
-      admin: adminId,
-      members: [adminId],
-      isPrivate: !!isPrivate,
-      password: isPrivate ? password : null
-    });
+const league = await League.create({
+name,
+admin: adminId,
+members: [adminId],
+isPrivate: !!isPrivate,
+password: isPrivate ? password : null
+});
 
-    res.status(201).json(league);
-  } catch (err) {
-    console.error("Create league error:", err);
-    res.status(500).json({ error: "Server error" });
-  }};
+res.status(201).json(league);
+} catch (err) {
+console.error("Create league error:", err);
+res.status(500).json({ error: "Server error" });
+}};
 
 exports.joinLeague = async (req, res) => {
 try {
-    const { userId, password } = req.body;
-    const league = await League.findById(req.params.id);
+const { userId, password } = req.body;
+const league = await League.findById(req.params.id);
 
-    if (!league) return res.status(404).json({ error: "League not found" });
+if (!league) return res.status(404).json({ error: "League not found" });
 
-    if (league.members.includes(userId)) {
-      return res.json({ message: "Already a member" });
-    }
+if (league.members.includes(userId)) {
+return res.json({ message: "Already a member" });
+}
 
-    if (league.isPrivate && league.password !== password) {
-      return res.status(403).json({ error: "Incorrect password" });
-    }
+if (league.isPrivate && !league.comparePassword(password)) {
+return res.status(403).json({ error: "Incorrect password" });
+}
 
-    league.members.push(userId);
-    await league.save();
+league.members.push(userId);
+await league.save();
 
-    res.json({ message: "Joined league", league });
-  } catch (err) {
-    res.status(500).json({ error: "Server error" });
-  }};
+res.json({ message: "Joined league", league });
+} catch (err) {
+res.status(500).json({ error: "Server error" });
+}};
 
 exports.joinViaInvite = async (req, res) => {
 try {
-    const { userId } = req.body;
+const { userId } = req.body;
 
-    const league = await League.findOne({ inviteCode: req.params.inviteCode });
-    if (!league) return res.status(404).json({ error: "Invalid invite code" });
+const league = await League.findOne({ inviteCode: req.params.inviteCode });
+if (!league) return res.status(404).json({ error: "Invalid invite code" });
 
-    if (!league.members.includes(userId)) {
-      league.members.push(userId);
-      await league.save();
-    }
+if (!league.members.includes(userId)) {
+league.members.push(userId);
+await league.save();
+}
 
-    res.json({ message: "Joined league via invite", league });
-  } catch (err) {
-    res.status(500).json({ error: "Server error" });
-  }};
+res.json({ message: "Joined league via invite", league });
+} catch (err) {
+res.status(500).json({ error: "Server error" });
+}};
 
 exports.leaveLeague = async (req, res) => {
 try {
-    const { userId } = req.body;
+const { userId } = req.body;
 
-    const league = await League.findById(req.params.id);
-    if (!league) return res.status(404).json({ error: "League not found" });
+const league = await League.findById(req.params.id);
+if (!league) return res.status(404).json({ error: "League not found" });
 
-    if (league.admin.toString() === userId) {
-      return res.status(403).json({
-        error: "Admin cannot leave the league. Transfer admin first."
-      });
-    }
+if (league.admin.toString() === userId) {
+return res.status(403).json({
+error: "Admin cannot leave the league. Transfer admin first."
+});
+}
 
-    league.members = league.members.filter(m => m.toString() !== userId);
-    await league.save();
+league.members = league.members.filter(m => m.toString() !== userId);
+await league.save();
 
-    res.json({ message: "Left league successfully" });
+res.json({ message: "Left league successfully" });
 
-  } catch (err) {
-    console.error("Leave league error:", err);
-    res.status(500).json({ error: "Server error" });
-  }};
+} catch (err) {
+console.error("Leave league error:", err);
+res.status(500).json({ error: "Server error" });
+}};
 
 exports.transferAdmin = async (req, res) => {
 try {
-    const { userId, newAdminId } = req.body;
+const { userId, newAdminId } = req.body;
 
-    const league = await League.findById(req.params.id);
-    if (!league) return res.status(404).json({ error: "League not found" });
+const league = await League.findById(req.params.id);
+if (!league) return res.status(404).json({ error: "League not found" });
 
-    if (league.admin.toString() !== userId) {
-      return res.status(403).json({ error: "Only admin can transfer ownership" });
-    }
+if (league.admin.toString() !== userId) {
+return res.status(403).json({ error: "Only admin can transfer ownership" });
+}
 
-    if (!league.members.includes(newAdminId)) {
-      return res.status(400).json({ error: "New admin must be a league member" });
-    }
+if (!league.members.includes(newAdminId)) {
+return res.status(400).json({ error: "New admin must be a league member" });
+}
 
-    league.admin = newAdminId;
-    await league.save();
+league.admin = newAdminId;
+await league.save();
 
-    res.json({ message: "Admin transferred", league });
-  } catch (err) {
-    res.status(500).json({ error: "Server error" });
-  }};
+res.json({ message: "Admin transferred", league });
+} catch (err) {
+res.status(500).json({ error: "Server error" });
+}};
 
 exports.deleteLeague = async (req, res) => {
 try {
-    const { userId } = req.body;
+const { userId } = req.body;
 
-    const league = await League.findById(req.params.id);
-    if (!league) return res.status(404).json({ error: "League not found" });
+const league = await League.findById(req.params.id);
+if (!league) return res.status(404).json({ error: "League not found" });
 
-    if (league.admin.toString() !== userId) {
-      return res.status(403).json({ error: "Only admin can delete league" });
-    }
+if (league.admin.toString() !== userId) {
+return res.status(403).json({ error: "Only admin can delete league" });
+}
 
-    await League.findByIdAndDelete(req.params.id);
+await League.findByIdAndDelete(req.params.id);
 
-    res.json({ message: "League deleted" });
-  } catch (err) {
-    res.status(500).json({ error: "Server error" });
-  }};
+res.json({ message: "League deleted" });
+} catch (err) {
+res.status(500).json({ error: "Server error" });
+}};
 
 exports.updateSettings = async (req, res) => {
 try {
-    const { userId, scoringStructure } = req.body;
+const { userId, scoringStructure } = req.body;
 
-    const league = await League.findById(req.params.id);
-    if (!league) return res.status(404).json({ error: "League not found" });
+const league = await League.findById(req.params.id);
+if (!league) return res.status(404).json({ error: "League not found" });
 
-    if (league.admin.toString() !== userId) {
-      return res.status(403).json({ error: "Only admin can update settings" });
-    }
+if (league.admin.toString() !== userId) {
+return res.status(403).json({ error: "Only admin can update settings" });
+}
 
-    league.settings.scoringStructure = scoringStructure;
-    await league.save();
+league.settings.scoringStructure = scoringStructure;
+await league.save();
 
-    res.json({ message: "Settings updated", league });
-  } catch (err) {
-    res.status(500).json({ error: "Server error" });
-  }};
+res.json({ message: "Settings updated", league });
+} catch (err) {
+res.status(500).json({ error: "Server error" });
+}};
 
 exports.searchLeagues = async (req, res) => {
 try {
-    const { q } = req.query;
+const { q, page = 1, limit = 20 } = req.query;
+const pageNum = Math.max(1, parseInt(page, 10) || 1);
+const limitNum = Math.min(50, Math.max(1, parseInt(limit, 10) || 20));
+const skip = (pageNum - 1) * limitNum;
 
-    if (!q || q.trim() === "") {
-      // Return ONLY public leagues
-      const leagues = await League.find({ isPrivate: false })
-        .select('name members inviteCode');
-      return res.json(leagues);
-    }
+let filter;
+if (!q || q.trim() === "") {
+filter = { isPrivate: false };
+} else {
+const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+filter = { name: { $regex: escaped, $options: 'i' } };
+}
 
-    // Search both public + private
-    const leagues = await League.find({
-      name: { $regex: q, $options: 'i' }
-    }).select('name isPrivate members inviteCode');
+const [leagues, total] = await Promise.all([
+League.find(filter)
+.select('name isPrivate members inviteCode')
+.skip(skip)
+.limit(limitNum),
+League.countDocuments(filter)
+]);
 
-    res.json(leagues);
+res.json({ data: leagues, page: pageNum, limit: limitNum, total, totalPages: Math.ceil(total / limitNum) });
 
-  } catch (err) {
-    console.error("Search leagues error:", err);
-    res.status(500).json({ error: "Server error" });
-  }};
+} catch (err) {
+console.error("Search leagues error:", err);
+res.status(500).json({ error: "Server error" });
+}};
 
 exports.myLeagues = async (req, res) => {
 try {
-    const userId = req.params.id;
-    const { q } = req.query;
+//const userId = req.params.id;
+const userId = req.params.userId;
+const { q } = req.query;
 
-    let filter = { members: userId };
+let filter = { members: userId };
 
-    if (q && q.trim() !== "") {
-      filter.name = { $regex: q, $options: "i" };
-    }
+if (q && q.trim() !== "") {
+filter.name = { $regex: q, $options: "i" };
+}
 
-    const leagues = await League.find(filter)
-      .select('name isPrivate admin members inviteCode settings');
+const leagues = await League.find(filter)
+.select('name isPrivate admin members inviteCode settings');
 
-    res.json(leagues);
+res.json(leagues);
 
-  } catch (err) {
-    console.error("My leagues error:", err);
-    res.status(500).json({ error: "Server error" });
-  }};
+} catch (err) {
+console.error("My leagues error:", err);
+res.status(500).json({ error: "Server error" });
+}};
 
 exports.getStandings = async (req, res) => {
 try {
-    const league = await League.findById(req.params.id)
-      .populate('members', 'name email');
+const league = await League.findById(req.params.id)
+.populate('members', 'name email');
 
-    if (!league) return res.status(404).json({ error: "League not found" });
+if (!league) return res.status(404).json({ error: "League not found" });
 
-    const scoring = league.settings.scoringStructure;
+const scoring = league.settings.scoringStructure;
 
-    // Get all picks for all members
-    const picks = await Pick.find({
-      user: { $in: league.members }
-    }).populate('race');
+// Get all picks for all members
+const picks = await Pick.find({
+user: { $in: league.members }
+}).populate('race');
 
-    // Group picks by user
-    const userMap = new Map();
-    league.members.forEach(m => userMap.set(m._id.toString(), []));
+// Group picks by user
+const userMap = new Map();
+league.members.forEach(m => userMap.set(m._id.toString(), []));
 
-    picks.forEach(p => {
-      const uid = p.user.toString();
-      if (userMap.has(uid)) {
-        userMap.get(uid).push(p);
-      }
-    });
+picks.forEach(p => {
+const uid = p.user.toString();
+if (userMap.has(uid)) {
+userMap.get(uid).push(p);
+}
+});
 
-    const standings = [];
+const standings = [];
 
-    for (const member of league.members) {
-      const userPicks = userMap.get(member._id.toString()) || [];
+for (const member of league.members) {
+const userPicks = userMap.get(member._id.toString()) || [];
 
-      // Group by race type
-      const groups = {
-        ironman703: [],
-        ironman: [],
-        t100: [],
-        wtcs: [],
-        bonusRace: []
-      };
+// Group by race type
+const groups = {
+ironman703: [],
+ironman: [],
+t100: [],
+wtcs: [],
+bonusRace: []
+};
 
-      const category = classifyRaceType(p.race.series);
-      groups[category].push(p.fantasyScoreTotal);
+userPicks.forEach(p => {
+if (!p.race) return;
+const category = classifyRaceType(p.race.series);
+groups[category].push(p.fantasyScoreTotal);
+});
 
+// Sort each group descending
+Object.keys(groups).forEach(key => groups[key].sort((a, b) => b - a));
 
-      // Sort each group descending
-      Object.keys(groups).forEach(key => groups[key].sort((a, b) => b - a));
+// Apply league scoring structure
+const total =
+(groups.ironman703.slice(0, scoring.ironman703).reduce((a, b) => a + b, 0)) +
+(groups.ironman.slice(0, scoring.ironman).reduce((a, b) => a + b, 0)) +
+(groups.t100.slice(0, scoring.t100).reduce((a, b) => a + b, 0)) +
+(groups.wtcs.slice(0, scoring.wtcs).reduce((a, b) => a + b, 0)) +
+(groups.bonusRace.slice(0, scoring.bonusRace).reduce((a, b) => a + b, 0));
 
-      // Apply league scoring structure
-      const total =
-        (groups.ironman703.slice(0, scoring.ironman703).reduce((a, b) => a + b, 0)) +
-        (groups.ironman.slice(0, scoring.ironman).reduce((a, b) => a + b, 0)) +
-        (groups.t100.slice(0, scoring.t100).reduce((a, b) => a + b, 0)) +
-        (groups.wtcs.slice(0, scoring.wtcs).reduce((a, b) => a + b, 0)) +
-        (groups.bonusRace.slice(0, scoring.bonusRace).reduce((a, b) => a + b, 0));
+standings.push({
+user: member.name,
+userId: member._id,
+total,
+breakdown: groups
+});
+}
 
-      standings.push({
-        user: member.name,
-        userId: member._id,
-        total,
-        breakdown: groups
-      });
-    }
+// Sort standings
+standings.sort((a, b) => b.total - a.total);
 
-    // Sort standings
-    standings.sort((a, b) => b.total - a.total);
+res.json({
+league: league.name,
+standings
+});
 
-    res.json({
-      league: league.name,
-      standings
-    });
-
-  } catch (err) {
-    console.error("League standings error:", err);
-    res.status(500).json({ error: "Server error" });
-  }};
+} catch (err) {
+console.error("League standings error:", err);
+res.status(500).json({ error: "Server error" });
+}};
 
 exports.recalculateStandings = async (req, res) => {
 try {
-    const league = await League.findById(req.params.id)
-      .populate('members', 'name email');
+const league = await League.findById(req.params.id)
+.populate('members', 'name email');
 
-    if (!league) return res.status(404).json({ error: "League not found" });
+if (!league) return res.status(404).json({ error: "League not found" });
 
-    const scoring = league.settings.scoringStructure;
+const scoring = league.settings.scoringStructure;
 
-    // Get all picks for all members
-    const picks = await Pick.find({
-      user: { $in: league.members }
-    }).populate('race');
+// Get all picks for all members
+const picks = await Pick.find({
+user: { $in: league.members }
+}).populate('race');
 
-    // Group picks by user
-    const userMap = new Map();
-    league.members.forEach(m => userMap.set(m._id.toString(), []));
+// Group picks by user
+const userMap = new Map();
+league.members.forEach(m => userMap.set(m._id.toString(), []));
 
-    picks.forEach(p => {
-      const uid = p.user.toString();
-      if (userMap.has(uid)) {
-        userMap.get(uid).push(p);
-      }
-    });
+picks.forEach(p => {
+const uid = p.user.toString();
+if (userMap.has(uid)) {
+userMap.get(uid).push(p);
+}
+});
 
-    const standings = [];
+const standings = [];
 
-    for (const member of league.members) {
-      const userPicks = userMap.get(member._id.toString()) || [];
 
-      const groups = {
-        ironman703: [],
-        ironman: [],
-        t100: [],
-        wtcs: [],
-        bonusRace: []
-      };
+for (const member of league.members) {
+const userPicks = userMap.get(member._id.toString()) || [];
 
-      userPicks.forEach(p => {
-        const type = p.race.series;
+const groups = {
+ironman703: [],
+ironman: [],
+t100: [],
+wtcs: [],
+bonusRace: []
+};
 
-        if (type.includes("70.3")) groups.ironman703.push(p.fantasyScoreTotal);
-        else if (type.includes("Ironman")) groups.ironman.push(p.fantasyScoreTotal);
-        else if (type.includes("T100")) groups.t100.push(p.fantasyScoreTotal);
-        else if (type.includes("WTCS")) groups.wtcs.push(p.fantasyScoreTotal);
-        else groups.bonusRace.push(p.fantasyScoreTotal);
-      });
+userPicks.forEach(p => {
+const type = p.race.series;
 
-      Object.keys(groups).forEach(key => groups[key].sort((a, b) => b - a));
+if (type.includes("70.3")) groups.ironman703.push(p.fantasyScoreTotal);
+else if (type.includes("Ironman")) groups.ironman.push(p.fantasyScoreTotal);
+else if (type.includes("T100")) groups.t100.push(p.fantasyScoreTotal);
+else if (type.includes("WTCS")) groups.wtcs.push(p.fantasyScoreTotal);
+else groups.bonusRace.push(p.fantasyScoreTotal);
+});
 
-      const total =
-        (groups.ironman703.slice(0, scoring.ironman703).reduce((a, b) => a + b, 0)) +
-        (groups.ironman.slice(0, scoring.ironman).reduce((a, b) => a + b, 0)) +
-        (groups.t100.slice(0, scoring.t100).reduce((a, b) => a + b, 0)) +
-        (groups.wtcs.slice(0, scoring.wtcs).reduce((a, b) => a + b, 0)) +
-        (groups.bonusRace.slice(0, scoring.bonusRace).reduce((a, b) => a + b, 0));
+Object.keys(groups).forEach(key => groups[key].sort((a, b) => b - a));
 
-      standings.push({
-        user: member.name,
-        userId: member._id,
-        total,
-        breakdown: groups
-      });
-    }
+const total =
+(groups.ironman703.slice(0, scoring.ironman703).reduce((a, b) => a + b, 0)) +
+(groups.ironman.slice(0, scoring.ironman).reduce((a, b) => a + b, 0)) +
+(groups.t100.slice(0, scoring.t100).reduce((a, b) => a + b, 0)) +
+(groups.wtcs.slice(0, scoring.wtcs).reduce((a, b) => a + b, 0)) +
+(groups.bonusRace.slice(0, scoring.bonusRace).reduce((a, b) => a + b, 0));
 
-    standings.sort((a, b) => b.total - a.total);
+standings.push({
+user: member.name,
+userId: member._id,
+total,
+breakdown: groups
+});
+}
 
-    res.json({
-      message: "League standings recalculated",
-      league: league.name,
-      standings
-    });
+standings.sort((a, b) => b.total - a.total);
 
-  } catch (err) {
-    console.error("Recalculate league error:", err);
-    res.status(500).json({ error: "Server error" });
-  }};
+res.json({
+message: "League standings recalculated",
+league: league.name,
+standings
+});
+
+} catch (err) {
+console.error("Recalculate league error:", err);
+res.status(500).json({ error: "Server error" });
+}};
 
 // controllers/leagueController.js
 
 exports.getLeagueLeaderboard = async (req, res) => {
-  try {
-    const leagueId = req.params.id;
+try {
+const leagueId = req.params.id;
 
-    const league = await League.findById(leagueId)
-      .populate('members', 'name email');
+const league = await League.findById(leagueId)
+.populate('members', 'name email');
 
-    if (!league) {
-      return res.status(404).json({ error: "League not found" });
-    }
+if (!league) {
+return res.status(404).json({ error: "League not found" });
+}
 
-    // Fetch all picks for all members
-    const picks = await Pick.find({
-      user: { $in: league.members.map(m => m._id) }
-    })
-      .populate('race', 'name series date')
-      .populate('user', 'name');
+// Fetch all picks for all members
+const picks = await Pick.find({
+user: { $in: league.members.map(m => m._id) }
+})
+.populate('race', 'name series date')
+.populate('user', 'name');
 
-    // Aggregate total fantasy points per user
-    const totals = new Map();
+// Aggregate total fantasy points per user
+const totals = new Map();
 
-    league.members.forEach(member => {
-      totals.set(member._id.toString(), {
-        userId: member._id,
-        name: member.name,
-        total: 0,
-        races: []
-      });
-    });
+league.members.forEach(member => {
+totals.set(member._id.toString(), {
+userId: member._id,
+name: member.name,
+total: 0,
+races: []
+});
+});
 
-    picks.forEach(pick => {
-      const uid = pick.user._id.toString();
-      if (!totals.has(uid)) return;
+picks.forEach(pick => {
+const uid = pick.user._id.toString();
+if (!totals.has(uid)) return;
 
-      totals.get(uid).total += pick.fantasyScoreTotal || 0;
+totals.get(uid).total += pick.fantasyScoreTotal || 0;
 
-      totals.get(uid).races.push({
-        raceId: pick.race?._id,
-        raceName: pick.race?.name,
-        series: pick.race?.series,
-        score: pick.fantasyScoreTotal
-      });
-    });
+totals.get(uid).races.push({
+raceId: pick.race?._id,
+raceName: pick.race?.name,
+series: pick.race?.series,
+score: pick.fantasyScoreTotal
+});
+});
 
-    // Convert map → array
-    const leaderboard = Array.from(totals.values());
+// Convert map → array
+const leaderboard = Array.from(totals.values());
 
-    // Sort by total descending
-    leaderboard.sort((a, b) => b.total - a.total);
+// Sort by total descending
+leaderboard.sort((a, b) => b.total - a.total);
 
-    res.json({
-      league: league.name,
-      leaderboard
-    });
+res.json({
+league: league.name,
+leaderboard
+});
 
-  } catch (err) {
-    console.error("League leaderboard error:", err);
-    res.status(500).json({ error: "Server error" });
-  }
+} catch (err) {
+console.error("League leaderboard error:", err);
+res.status(500).json({ error: "Server error" });
+}
 };

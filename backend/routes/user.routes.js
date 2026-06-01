@@ -1,55 +1,38 @@
 const router = require('express').Router();
 const user = require('../controllers/userController');
-const { authMiddleware } = require('../middleware/auth');
+const { authMiddleware, ownerOnly, adminOnly } = require('../middleware/auth');
 
-// CRUD
-//{name, email, password, confirmPassword}
-//improve validation right now it does email and password length but should also check for valid email format and strong password
-//add password confirmation
+// Registration (public)
 router.post('/', user.createUser);
 
-router.get('/', user.listUsers);
-router.get('/:id', user.getUser);
+// Authenticated + owner-only routes
+router.get('/:id', authMiddleware, user.getUser);
+router.put('/:id', authMiddleware, ownerOnly, user.updateUser);
 
-//{name, email}
-//maybe ask for password or authorized change idk
-//validation needs to be implemented
-router.put('/:id', user.updateUser);
+// Account management
+router.post('/:id/changePassword', authMiddleware, ownerOnly, user.changePassword);
+router.patch('/:id/updateProfile', authMiddleware, ownerOnly, user.updateProfile);
+router.delete('/:id/deleteAccount', authMiddleware, ownerOnly, user.deleteAccount);
 
-//{userId}
-router.delete('/:id', user.deleteUser);
+// Settings
+router.get('/:id/settings', authMiddleware, ownerOnly, user.getSettings);
+router.patch('/:id/settings', authMiddleware, ownerOnly, user.updateSettings);
 
-// ACCOUNT MANAGEMENT   
-//{oldPassword, newPassword}
-//add password confirmation
-//need token jawn to test
-router.post('/:id/changePassword', authMiddleware, user.changePassword);
+// Preferences
+router.get('/:id/preferences', authMiddleware, ownerOnly, user.getPreferences);
+router.patch('/:id/preferences', authMiddleware, ownerOnly, user.updatePreferences);
 
-//{name, email, avatar, bio}
-//need token 
-router.patch('/:id/updateProfile', authMiddleware, user.updateProfile);
-router.delete('/:id/deleteAccount', authMiddleware, user.deleteAccount);
+// Security
+router.get('/:id/security', authMiddleware, ownerOnly, user.getSecurity);
 
-// SETTINGS
-router.get('/:id/settings', authMiddleware, user.getSettings);
+// Activity
+router.get('/:id/activity', authMiddleware, ownerOnly, user.getActivity);
 
-//{avatar, bio}
-router.patch('/:id/settings', authMiddleware, user.updateSettings);
+// Favorite leagues
+router.post('/:id/favoriteLeague/:leagueId', authMiddleware, ownerOnly, user.toggleFavoriteLeague);
+router.get('/:id/favoriteLeagues', authMiddleware, ownerOnly, user.getFavoriteLeagues);
 
-// PREFERENCES
-router.get('/:id/preferences', authMiddleware, user.getPreferences);
-
-//{theme, notifications}
-//need to change what kind of notifications and where
-router.patch('/:id/preferences', authMiddleware, user.updatePreferences);
-
-// SECURITY
-router.get('/:id/security', authMiddleware, user.getSecurity);
-
-// ACTIVITY
-router.get('/:id/activity', authMiddleware, user.getActivity);
-
-
-
+// Admin: promote/demote users
+router.patch('/:id/role', authMiddleware, adminOnly, user.updateRole);
 
 module.exports = router;

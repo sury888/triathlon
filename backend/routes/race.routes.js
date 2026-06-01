@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const race = require('../controllers/raceController');
-const { authMiddleware } = require('../middleware/auth');
+const { authMiddleware, adminOnly } = require('../middleware/auth');
 
 // RACES
 router.get('/', race.getRaces);
@@ -12,22 +12,26 @@ router.get('/upcoming', race.getUpcomingRaces);
 router.get('/finished', race.getFinishedRaces);
 router.get('/current', race.getCurrentRaces);
 router.get('/scored', race.getScoredRaces);
+router.get('/:id', race.getRaceById);
 
 
-router.post('/deleteRaceScoresByRace', race.deleteRaceScoresByRace);
-router.post('/', authMiddleware, race.createRaces);
 
-router.post('/:id/processResults', authMiddleware, race.processResults);
+router.post('/deleteRaceScoresByRace', authMiddleware, adminOnly, race.deleteRaceScoresByRace);
+router.post('/', authMiddleware, adminOnly, race.createRaces);
+
+router.post('/:id/processResults', authMiddleware, adminOnly, race.processResults);
+router.post('/:id/setSideBets', authMiddleware, adminOnly, race.setSideBetsConfig);
+router.post('/:id/scoreSideBets', authMiddleware, adminOnly, race.setSideBetsResults);
+
 
 
 //{any updatable fields}
 //token jawn?
-router.put('/:id', authMiddleware, race.updateRace);
+router.put('/:id', authMiddleware, adminOnly, race.updateRace);
 
-router.put('/:id/startlist', authMiddleware, race.updateStartList);
+router.put('/:id/startlist', authMiddleware, adminOnly, race.updateStartList);
 
-router.get('/:id', race.getRaceById);
-// If you later add processResults:
+router.post('/recalculate', authMiddleware, adminOnly, race.recalculateAllScores); 
 // router.post('/:id/processResults', authMiddleware, race.processResults);
 
 module.exports = router;

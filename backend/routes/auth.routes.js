@@ -29,7 +29,5 @@ router.post('/forgotPassword', auth.forgotPassword);
   "newPassword": "newStrongPassword123"}*/
 router.post('/resetPassword', auth.resetPassword);
 
-//{email, password}
-router.post('/login', auth.login);
 
 module.exports = router;

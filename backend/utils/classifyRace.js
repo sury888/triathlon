@@ -15,3 +15,5 @@ function classifyRaceType(series) {
 
   return "bonusRace"; // fallback
 }
+
+module.exports = {classifyRaceType};
