@@ -9,7 +9,6 @@ const mongoose = require('mongoose');
 const { connectDB } = require('./config/db');
 const {errorHandler} = require('./middleware/errorHandler');
 require('dotenv').config();
-const { connectDB } = require('./config/db');
 
 const authRoutes = require('./routes/auth.routes');
 const userRoutes = require('./routes/user.routes');
@@ -37,7 +36,7 @@ app.use(helmet());
 app.use(cors({
   origin: process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',')
-    : ['http://localhost:5173'],
+    : ['http://localhost:3000'],
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));

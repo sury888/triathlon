@@ -31,7 +31,7 @@ Reset Password
 }
 
 async function sendPasswordResetEmail(email, resetToken) {
-const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
 const resetLink = `${baseUrl}/reset-password?token=${resetToken}`;
 const html = buildEmailHtml(resetLink);
 
