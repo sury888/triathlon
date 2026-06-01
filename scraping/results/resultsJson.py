@@ -79,7 +79,7 @@ def get_full_country(code):
 # ========================= CONFIG =========================
 CSV_FILE = "tri fanta - NZ Results.csv"
 JSON_FILE = "nz_results.json"
-RACE_NAME = "Ironman Texas 2026"
+RACE_NAME = "Ironman 70.3 Aix-en-Provence 2026"
 # =========================================================
 
 data = []
@@ -147,15 +147,15 @@ with open(CSV_FILE, "r", encoding="utf-8") as f:
 # Re-seed discipline ranks (unchanged)
 finishers = [ath for ath in data if ath["status"] == "Finished"]
 
-finishers_sorted = sorted(finishers, key=lambda x: x["swimTime"])
+finishers_sorted = sorted(finishers, key=lambda x: x["swimTime"] if x["swimTime"] is not None else float('inf'))
 for new_rank, ath in enumerate(finishers_sorted, 1):
     ath["swimRank"] = new_rank
 
-finishers_sorted = sorted(finishers, key=lambda x: x["bikeTime"])
+finishers_sorted = sorted(finishers, key=lambda x: x["bikeTime"] if x["bikeTime"] is not None else float('inf'))
 for new_rank, ath in enumerate(finishers_sorted, 1):
     ath["bikeRank"] = new_rank
 
-finishers_sorted = sorted(finishers, key=lambda x: x["runTime"])
+finishers_sorted = sorted(finishers, key=lambda x: x["runTime"] if x["runTime"] is not None else float('inf'))
 for new_rank, ath in enumerate(finishers_sorted, 1):
     ath["runRank"] = new_rank
 

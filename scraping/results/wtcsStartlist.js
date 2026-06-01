@@ -13,12 +13,44 @@ function timeToSeconds(str) {
   return h * 3600 + m * 60 + s;
 }
 
+// Assign split rankings (only among finishers with valid times)
+function assignSplitRanks(results) {
+  const finishers = results.filter(r => r.totalTime !== null);
+
+  // Helper: sort with null → Infinity
+  const sortBy = (key) =>
+    [...finishers]
+      .filter(r => r[key] !== null)
+      .sort((a, b) => a[key] - b[key]);
+
+  // SWIM
+  const swimSorted = sortBy("swimTime");
+  swimSorted.forEach((ath, idx) => {
+    ath.swimRank = idx + 1;
+  });
+
+  // BIKE
+  const bikeSorted = sortBy("bikeTime");
+  bikeSorted.forEach((ath, idx) => {
+    ath.bikeRank = idx + 1;
+  });
+
+  // RUN
+  const runSorted = sortBy("runTime");
+  runSorted.forEach((ath, idx) => {
+    ath.runRank = idx + 1;
+  });
+
+  return results;
+}
+
+
 
 const sleep = ms => new Promise(res => setTimeout(res, ms));
 
 const programs2026 = [
-  { eventId: 195144, programId: 678661, label: "2026 WTCS Yokohama Men" },
-  { eventId: 195144, programId: 678662, label: "2026 WTCS Yokohama Women" }, 
+  { eventId: 195146, programId: 676652, label: "2026 WTCS Alghero Men" },
+  { eventId: 195146, programId: 676653, label: "2026 WTCS Alghero Women" }, 
 ];
 
 /* ---------------------------------------------------------
@@ -73,20 +105,38 @@ async function getResults(eventId, programId) {
           const run  = splits[4] ?? null;
 
           return {
-            athleteId: r.athlete_id,
+            athleteID: r.athlete_id,
             name: r.athlete_full_name,
             country: r.athlete_noc,
             gender: r.athlete_gender ?? r.raw?.athlete_gender ?? null,
             startRank: r.start_num ?? null,
+            rank: r.position ?? null,
 
             // Convert to seconds
-            swimSeconds: timeToSeconds(swim),
-            bikeSeconds: timeToSeconds(bike),
-            runSeconds: timeToSeconds(run),
-            totalSeconds: timeToSeconds(r.total_time),
+            swimTime: timeToSeconds(swim),
+            bikeTime: timeToSeconds(bike),
+            runTime: timeToSeconds(run),
+            totalTime: timeToSeconds(r.total_time),
 
             // Keep raw for debugging
             //raw: r
+            /*
+            athlete = {
+            "race": RACE_NAME,
+            "name": name,
+            "gender": gender,
+            "rank": overall_rank,
+            "country": nation,
+            "swimRank": None,
+            "bikeRank": None,
+            "runRank": None,
+            "swimTime": swim_time,
+            "bikeTime": bike_time,
+            "runTime": run_time,
+            "totalTime": total_time,
+            "status": status,
+            "startRank": start_rank   # ← added here!
+        }*/
           };
         })
       : [];
@@ -120,7 +170,7 @@ async function run() {
 
     const { raw: rawResults, results } = await getResults(p.eventId, p.programId);
     console.log(`   • Results entries: ${results.length}`);
-
+    assignSplitRanks(results);
     startListOut.push({
       eventId: p.eventId,
       programId: p.programId,
@@ -129,13 +179,13 @@ async function run() {
       rawStartList: rawStart
     });
 
-    resultsOut.push({
-      eventId: p.eventId,
-      programId: p.programId,
-      label: p.label,
-      results,
-      rawResults
-    });
+      resultsOut.push({
+        eventId: p.eventId,
+        programId: p.programId,
+        label: p.label,
+        results,
+        rawResults,
+      });
 
     await sleep(200);
   }

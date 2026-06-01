@@ -431,6 +431,18 @@ exports.getScoredRaces = async (req, res) => {
   }
 };
 
+function normalizeStatus(rankValue) {
+  if (!rankValue) return "DNF";
+
+  const val = String(rankValue).trim().toUpperCase();
+
+  if (["DNF", "DNS", "LAP"].includes(val)) return "DNF";
+
+  // numeric rank → finished
+  if (!isNaN(Number(val))) return "Finished";
+
+  return "DNF";
+}
 
 exports.processResults = async (req, res) => {
   try {
@@ -487,7 +499,7 @@ exports.processResults = async (req, res) => {
         });
         continue;
       }
-
+      const status = normalizeStatus(resEntry.rank);
       const entry = {
         athlete: athlete._id,
         athleteName: athlete.name,
@@ -496,14 +508,23 @@ exports.processResults = async (req, res) => {
         swimTimeSeconds: parseTime(resEntry.swimTime),
         bikeTimeSeconds: parseTime(resEntry.bikeTime),
         runTimeSeconds: parseTime(resEntry.runTime),
-        status: resEntry.status || (resEntry.rank ? "Finished" : "DNF"),
+        //status: resEntry.status || (resEntry.rank ? "Finished" : "DNF"),
+        status,
         startRank: Number(resEntry.startRank) || null
       };
 
       rawEntries.push(entry);
 
       if (entry.status !== "Finished" || entry.totalTimeSeconds === null) {
-        dnfCount++;
+        
+        if (status === "DNF" || status === "LAP") {
+          dnfCount++;
+          entry.place = null;
+          entry.totalTimeSeconds = null;
+          entry.swimTimeSeconds = null;
+          entry.bikeTimeSeconds = null;
+          entry.runTimeSeconds = null;
+        }
         continue;
       }
 
