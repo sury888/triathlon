@@ -108,12 +108,12 @@ key: { type: String, required: true }, // e.g. "finishers_over_4"
 prompt: { type: String, required: true },
 type: {
 type: String,
-enum: ['over_under', 'boolean', 'exact'],
+enum: ['over_under', 'boolean', 'exact', 'Over/Under', 'Yes/No', 'Exact'],
 required: true
 },
 difficulty: {
 type: String,
-enum: ['easy', 'medium', 'hard'],
+enum: ['easy', 'medium', 'hard', "Easy (+1 pt)", "Medium (+3 pt)", "Hard (+5 pt)"],
 required: true
 },
 points: { type: Number},

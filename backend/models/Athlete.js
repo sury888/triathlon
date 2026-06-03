@@ -59,8 +59,7 @@ maxlength: 100,
 },
 score: {
 type: Number,
-required: true,
-min: 0,
+required: true
 },
 raceId: {
 type: mongoose.Schema.Types.ObjectId,
