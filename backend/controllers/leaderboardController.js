@@ -569,3 +569,34 @@ exports.userDetail = async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 };
+
+exports.athleteDetail = async (req, res) => {
+  try {
+    const athlete = await Athlete.findById(req.params.athleteId);
+    if (!athlete) return res.status(404).json({ error: 'Athlete not found' });
+
+    const season = req.query.season || new Date().getFullYear().toString();
+    const seasonScores = athlete.raceScores
+      .filter(rs => rs.race && rs.race.match(new RegExp(season, 'i')))
+      .sort((a, b) => (b.score || 0) - (a.score || 0));
+
+    res.json({
+      athlete: {
+        _id: athlete._id,
+        name: athlete.name,
+        country: athlete.country,
+        gender: athlete.gender,
+        profilePicture: athlete.profilePicture,
+        ptoRanking: athlete.ptoRanking,
+        swimRanking: athlete.swimRanking,
+        bikeRanking: athlete.bikeRanking,
+        runRanking: athlete.runRanking
+      },
+      raceScores: seasonScores,
+      totalPoints: seasonScores.reduce((sum, rs) => sum + (rs.score || 0), 0)
+    });
+  } catch (err) {
+    console.error('Athlete detail error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};

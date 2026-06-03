@@ -595,6 +595,9 @@ $push: {
 raceScores: {
 race: race.name,
 raceId: race._id,
+place: result.place,
+location: race.location || '',
+date: race.date || null,
 score: result.score,
 breakdown: result.breakdown || {},
 status: result.status || "Finished"

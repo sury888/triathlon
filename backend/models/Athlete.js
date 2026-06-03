@@ -66,6 +66,10 @@ raceId: {
 type: mongoose.Schema.Types.ObjectId,
 ref: 'Race',
 },
+place:{
+    type: Number,
+    default: null,
+},
 
 // NEW: full scoring breakdown
 breakdown: {
