@@ -415,7 +415,7 @@ function RaceLeaderboard({ raceId, userId }) {
   useEffect(() => {
     async function fetch() {
       try {
-        const { data } = await api.get(`/races/${raceId}/leaderboard`)
+        const { data } = await api.get(`/leaderboard/race/${raceId}`)
         setLeaderboard(data)
       } catch (err) {
         console.error('Leaderboard fetch error:', err)
@@ -763,7 +763,7 @@ export default function RaceDetail() {
   const lockD = Math.max(0, Math.floor(lockDiff / 86400000))
   const lockH = Math.max(0, Math.floor((lockDiff % 86400000) / 3600000))
   const lockM = Math.max(0, Math.floor((lockDiff % 3600000) / 60000))
-  const lockLabel = lockDiff <= 0 ? 'Locked' : lockD > 0 ? `${lockD}d ${lockH}h` : lockH > 0 ? `${lockH}h ${lockM}m` : `${lockM}m`
+  const lockLabel = lockDiff <= 0 ? 'Closed' : lockD > 0 ? `${lockD}d ${lockH}h` : lockH > 0 ? `${lockH}h ${lockM}m` : `${lockM}m`
   const lockUrgent = lockDiff > 0 && lockDiff < 86400000
 
   const resultsBlock = hasResults && (

@@ -11,7 +11,11 @@ router.get('/', race.getRaces);
 router.get('/upcoming', race.getUpcomingRaces);
 router.get('/finished', race.getFinishedRaces);
 router.get('/current', race.getCurrentRaces);
+router.get('/recalculate', authMiddleware, adminOnly, race.recalculateAllScores); 
 router.get('/scored', race.getScoredRaces);
+router.post('/private', authMiddleware, race.createPrivateRace);
+router.post('/join/:inviteCode', authMiddleware, race.joinPrivateRace);
+
 router.get('/:id', race.getRaceById);
 
 
@@ -22,6 +26,8 @@ router.post('/', authMiddleware, adminOnly, race.createRaces);
 router.post('/:id/processResults', authMiddleware, adminOnly, race.processResults);
 router.post('/:id/setSideBets', authMiddleware, adminOnly, race.setSideBetsConfig);
 router.post('/:id/scoreSideBets', authMiddleware, adminOnly, race.setSideBetsResults);
+router.post('/:id/invite', authMiddleware, race.inviteToRace);
+
 
 
 
@@ -31,7 +37,6 @@ router.put('/:id', authMiddleware, adminOnly, race.updateRace);
 
 router.put('/:id/startlist', authMiddleware, adminOnly, race.updateStartList);
 
-router.post('/recalculate', authMiddleware, adminOnly, race.recalculateAllScores); 
 // router.post('/:id/processResults', authMiddleware, race.processResults);
 
 module.exports = router;

@@ -32,6 +32,7 @@ router.patch('/:id/settings', authMiddleware, league.updateSettings);
 
 router.get('/search', league.searchLeagues);
 router.get('/my/:userId', league.myLeagues);
+router.get('/:id', league.getLeagueById);
 
 router.get('/:id/standings', league.getStandings);
 

@@ -32,7 +32,7 @@ function formatCountdown(target) {
 function groupByEvent(raceList) {
   const map = {}
   for (const r of raceList) {
-    const slug = r.eventSlug || r._id
+    const slug = r.eventSlug || r.name.replace(/\s*(Men|Women|Male|Female|M|F)\s*$/i, '').trim() + '|' +(r.date)
     if (!map[slug]) {
       map[slug] = {
         eventSlug: slug,
@@ -66,7 +66,7 @@ function PickStatusBadge({ status }) {
     return <span className="text-xs px-2 py-0.5 rounded-full border border-[rgba(180,190,200,0.3)] text-[#9CA3AF] whitespace-nowrap">No Picks</span>
   }
   if (status === 'draft') {
-    return <span className="text-xs px-2 py-0.5 rounded-full border border-[#D97706]/30 bg-[rgba(251,191,36,0.12)] text-[#B45309] whitespace-nowrap">Picks Saved</span>
+    return <span className="text-xs px-2 py-0.5 rounded-full border border-[#D97706]/30 bg-[rgba(35, 134, 10, 0.31)] text-[#B45309] whitespace-nowrap">Picks Saved</span>
   }
   return <span className="text-xs px-2 py-0.5 rounded-full border border-[#A5B4FC]/30 bg-[rgba(99,102,241,0.12)] text-[#A5B4FC] whitespace-nowrap">Picks Submitted</span>
 }
@@ -85,6 +85,7 @@ export default function Races() {
   const [joinCode, setJoinCode] = useState('')
   const [joinError, setJoinError] = useState('')
   const [joining, setJoining] = useState(false)
+  const [showAllUpcoming, setShowAllUpcoming] = useState(false)
 
   const handleJoinWithCode = async () => {
     const trimmed = joinCode.trim()
@@ -114,15 +115,29 @@ export default function Races() {
     if (authLoading) return
     let cancelled = false
     async function fetchRaces() {
+  try {
+    const { data } = await api.get('/races')
+    let raceList = Array.isArray(data) ? data : (data?.data || [])
+    
+    // Merge pick status if user is logged in
+    if (user) {
       try {
-        const { data } = await api.get('/races')
-        if (!cancelled) setRaces(Array.isArray(data) ? data : [])
-      } catch (err) {
-        console.error('Fetch races error:', err)
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
+        const { data: picks } = await api.get(`/picks/user/${user._id}`)
+        const pickMap = new Map(picks.map(p => [p.race?._id || p.race, p]))
+        raceList = raceList.map(r => {
+          const pick = pickMap.get(r._id)
+          return { ...r, pickStatus: pick ? (pick.status === 'submitted' ? 'made' : 'draft') : 'none' }
+        })
+      } catch {}
     }
+    
+    if (!cancelled) setRaces(raceList)
+  } catch (err) {
+    console.error('Fetch races error:', err)
+  } finally {
+    if (!cancelled) setLoading(false)
+  }
+}
     fetchRaces()
     return () => { cancelled = true }
   }, [authLoading, user, location.key])
@@ -131,7 +146,7 @@ export default function Races() {
     let list = races
     if (filter === 'upcoming') list = list.filter(r => ['Open', 'Upcoming'].includes(r.status))
     else if (filter === 'finished') list = list.filter(r => r.status === 'Finished and Scored')
-    else if (filter === 'current') list = list.filter(r => r.status === 'Locked')
+    else if (filter === 'current') list = list.filter(r => r.status === 'Closed')
     if (search.trim()) {
       const q = search.toLowerCase()
       list = list.filter(r =>
@@ -151,7 +166,7 @@ export default function Races() {
     .sort((a, b) => new Date(a.date) - new Date(b.date))
 
   const lockedEvents = events
-    .filter(e => e.status === 'Locked')
+    .filter(e => e.status === 'Closed')
     .sort((a, b) => new Date(b.date) - new Date(a.date))
 
   const finishedEvents = events
@@ -274,7 +289,7 @@ export default function Races() {
             <>
               <h2 className="text-sm font-semibold text-[#9CA3AF] uppercase tracking-wider mb-3">Upcoming</h2>
               <div className="space-y-2 mb-8">
-                {upcomingEvents.map(event => {
+                {(showAllUpcoming ? upcomingEvents : upcomingEvents.slice(0,4)).map(event => {
                   const countdown = formatCountdown(event.lockTime)
                   const isUrgent = countdown && (new Date(event.lockTime) - new Date()) < 86400000
                   const displaySeries = mapSeries(event.series)
@@ -324,6 +339,13 @@ export default function Races() {
                     </Link>
                   )
                 })}
+                {upcomingEvents.length > 4 && (
+                    <button
+                      onClick={(e) => {e.preventDefault(); setShowAllUpcoming(!showAllUpcoming)}}
+                      className="w-full py-2.5 rounded-lg text-sm font-medium text-[#D0A242] bg-[rgba(216,221,223,0.45)] border border-[#D0A242]/15 hover:bg-[rgba(208,162,66,0.12)] transition-colors mt-2">
+                        {showAllUpcoming ? 'Show Less' : `Show All ${upcomingEvents.length} Upcoming`}
+                        </button>
+                )}
               </div>
             </>
           )}

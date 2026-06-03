@@ -33,7 +33,7 @@ if (!match) return res.status(400).json({ error: "Invalid credentials" });
 const accessToken = jwt.sign(
 { userId: user._id },
 process.env.JWT_SECRET,
-{ expiresIn: '15m' }
+{ expiresIn: '7d' }
 );
 
 const refreshToken = jwt.sign(
@@ -67,7 +67,7 @@ return res.status(401).json({ error: 'Invalid refresh token' });
 const newAccessToken = jwt.sign(
 { userId: user._id },
 process.env.JWT_SECRET,
-{ expiresIn: '15m' }
+{ expiresIn: '7d' }
 );
 
 res.json({ token: newAccessToken });
@@ -102,7 +102,7 @@ password: crypto.randomBytes(32).toString("hex")
 const accessToken = jwt.sign(
 { userId: user._id },
 process.env.JWT_SECRET,
-{ expiresIn: '15m' }
+{ expiresIn: '7d' }
 );
 
 const refreshToken = jwt.sign(

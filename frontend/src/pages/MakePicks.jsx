@@ -55,7 +55,7 @@ You have unsaved or incomplete picks. If you leave now, your changes may be lost
 )
 }
 
-function AthleteCard({ entry, index, isPicked, isPickedForPlace, placedPosition, onClick, disabled, activeSlotType, gender, isSelected, isWTCS }) {
+function AthleteCard({ entry, index, isPicked, isPickedForPlace, placedPosition, onClick, disabled, activeSlotType, gender, isSelected, isWTCS, isPrivate }) {
 const name = entry.athleteName || entry.athlete?.name || 'Unknown'
 const rank = entry.startRank || index + 1
 const isSplitSlot = activeSlotType && !activeSlotType.startsWith('#')
@@ -82,22 +82,22 @@ isSelected
 <span className="text-sm text-[#9CA3AF] w-5 text-right font-mono flex-shrink-0">{rank}</span>
 <div className="flex-1 min-w-0">
 <div className="font-medium truncate text-sm">{name}</div>
-{isWTCS ? (
+{isPrivate ? null : isWTCS ? (
 <div className="flex gap-1.5 mt-0.5 flex-wrap">
-{entry.wtsRanking && <span className="text-xs text-[#A5B4FC]">WTCS Rank: {entry.wtsRanking}</span>}
-{entry.winPct && entry.winPct !== '0' && entry.winPct !== '0.0' && (
-<span className="text-xs text-[#B45309]">WTCS Win: {entry.winPct}%</span>
+{entry.athlete?.wtsRanking && <span className="text-xs text-[#A5B4FC]">WTCS Rank: {entry.athlete?.wtsRanking}</span>}
+{entry.athlete?.winPct && entry.athlete?.winPct !== '0' && entry.athlete?.winPct !== '0.0' && (
+<span className="text-xs text-[#B45309]">WTCS Win: {entry.athlete?.winPct}%</span>
 )}
-{entry.podiumPct && entry.podiumPct !== '0' && entry.podiumPct !== '0.0' && (
-<span className="text-xs text-[#B45309]">WTCS Podium: {entry.podiumPct}%</span>
+{entry.athlete?.podiumPct && entry.athlete?.podiumPct !== '0' && entry.athlete?.podiumPct !== '0.0' && (
+<span className="text-xs text-[#B45309]">WTCS Podium: {entry.athlete?.podiumPct}%</span>
 )}
 </div>
 ) : (
 <div className="flex gap-1.5 mt-0.5 flex-wrap">
-{entry.ptoRanking && <span className="text-xs text-[#B45309]">PTO: {entry.ptoRanking}</span>}
-<span className="text-xs text-[#22D3EE]">Swim: {entry.swimRanking || '-'}</span>
-<span className="text-xs text-[#D0A242]">Bike: {entry.bikeRanking || '-'}</span>
-<span className="text-xs text-[#E11D48]">Run: {entry.runRanking || '-'}</span>
+{entry.athlete?.ptoRanking && <span className="text-xs text-[#B45309]">PTO: {entry.athlete?.ptoRanking}</span>}
+<span className="text-xs text-[#22D3EE]">Swim: {entry.athlete?.swimRanking || '-'}</span>
+<span className="text-xs text-[#D0A242]">Bike: {entry.athlete?.bikeRanking || '-'}</span>
+<span className="text-xs text-[#E11D48]">Run: {entry.athlete?.runRanking || '-'}</span>
 </div>
 )}
 </div>
@@ -258,7 +258,7 @@ useEffect(() => {
 if (!race) return
 function update() {
 const diff = new Date(race.lockTime) - new Date()
-if (diff <= 0) { setLockCountdown('Locked'); return }
+if (diff <= 0) { setLockCountdown('Closed'); return }
 const d = Math.floor(diff / 86400000)
 const h = Math.floor((diff % 86400000) / 3600000)
 const m = Math.floor((diff % 3600000) / 60000)
@@ -478,7 +478,7 @@ setUnderdogErrors(prev => ({
 }))
 setTimeout(() => {
 setUnderdogErrors(prev => { const next = { ...prev }; delete next[`${gender}-${index}`]; return next })
-}, 3000)
+}, 5000)
 return
 }
 
@@ -732,8 +732,9 @@ const placedSlotIdx = gs.slots.findIndex(s => s && (s.athlete?._id || s.athlete)
 const isThisSelected = selectedAthlete && (selectedAthlete.entry.athlete?._id || selectedAthlete.entry.athlete) === athleteId && selectedAthlete.gender === gender
 return (
 <AthleteCard
-key={athleteId}
+key={'${athleteId}-${i}'}
 entry={entry}
+isPrivate={race?.isPrivate}
 index={i}
 isPicked={false}
 isPickedForPlace={isPickedForPlace}

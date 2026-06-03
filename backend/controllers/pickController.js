@@ -192,10 +192,16 @@ return res.status(403).json({ error: "Picks are locked for this race" });
 }
 
 // 3. Validate structure
-const errors = await validatePickStructure(req.body, raceDoc);
-if (errors.length > 0) {
-return res.status(400).json({ errors });
+const isComplete = picks?.length === 5 && picks.filter(p => p.isUnderdog).length === 1
+&& fastestSplits?.swim && fastestSplits?.bike && fastestSplits?.run;
+
+if (isComplete){
+  const error = await validatePickStructure(req.body, raceDoc);
+  if (error.length > 0) {
+    return res.status(400).json({ errors });
 }
+}
+
 
 // 4. Upsert (create OR overwrite)
 const pick = await Pick.findOneAndUpdate(
@@ -205,6 +211,8 @@ $set: {
 picks,
 fastestSplits,
 sideBets,
+status: (picks?.length === 5 && picks.filter(p => p.isUnderdog).length === 1
+&& fastestSplits?.swim && fastestSplits?.bike && fastestSplits?.run) ? 'submitted' : 'saved',
 fantasyScoreTotal: 0,
 fantasyBreakdown: {}
 }

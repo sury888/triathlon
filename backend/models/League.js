@@ -56,13 +56,13 @@ bonusRace: 1
 createdAt: { type: Date, default: Date.now }
 });
 
-leagueSchema.pre('save', function (next) {
-if (!this.isModified('password') || !this.password) return next();
-const salt = crypto.randomBytes(16).toString('hex');
-const hash = crypto.pbkdf2Sync(this.password, salt, 10000, 64, 'sha512').toString('hex');
-this.password = `${salt}:${hash}`;
-next();
+leagueSchema.pre('save', async function () {
+  if (!this.isModified('password') || !this.password) return;
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.pbkdf2Sync(this.password, salt, 10000, 64, 'sha512').toString('hex');
+  this.password = `${salt}:${hash}`;
 });
+
 
 leagueSchema.methods.comparePassword = function (candidate) {
 if (!this.password || !this.password.includes(':')) return candidate === this.password;

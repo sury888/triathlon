@@ -64,7 +64,7 @@ export default function Leagues() {
   async function handleSearch() {
     try {
       const { data } = await api.get(`/leagues/search?q=${searchQuery}`)
-      setSearchResults(data)
+      setSearchResults(Array.isArray(data) ? data :(data?.data || []))
       setHasSearched(true)
       // Fetch standings for search results too
       const standingsMap = {}

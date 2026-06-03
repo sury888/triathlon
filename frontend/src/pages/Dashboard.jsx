@@ -51,7 +51,7 @@ function formatLockDate(lockTime) {
 function groupByEvent(raceList) {
   const map = {}
   for (const r of raceList) {
-    const slug = r.eventSlug || r._id
+    const slug = r.eventSlug || r.name.replace(/\s*(Men|Women|Male|Female|M|F)\s*$/i, '').trim() + '|' +(r.date || r.lockTime)
     if (!map[slug]) {
       map[slug] = {
         eventSlug: slug,
@@ -75,7 +75,7 @@ function groupByEvent(raceList) {
 function UpcomingEventCard({ event, user, userPicks }) {
   const countdown = useCountdown(event.lockTime)
   const anyHasStartList = event.races.some(r => r.startList && r.startList.length > 0)
-  const isLocked = event.status === 'Locked'
+  const isLocked = event.status === 'Closed'
   // Determine pick status for each race in the event
   const racePickStatuses = event.races.map(r => {
     const pick = userPicks.find(p => (p.race?._id || p.race) === r._id)
@@ -126,16 +126,16 @@ function UpcomingEventCard({ event, user, userPicks }) {
           {countdown.text}
         </div>
         <div className="text-xs text-[#9CA3AF] mt-0.5 flex items-center justify-center gap-1">
-          {isLocked ? 'Locked' : `Picks lock ${formatLockDate(event.lockTime)}`}
+          {isLocked ? 'Closed' : `Picks lock ${formatLockDate(event.lockTime)}`}
         </div>
       </div>
 
       {user && anyHasStartList && (
         <div className="text-center">
           {pickStatus === 'made' ? (
-            <span className="text-xs px-3 py-1 rounded-full bg-[rgba(99,102,241,0.12)] text-[#A5B4FC] border border-[#A5B4FC]/20 font-medium">Picks Submitted</span>
+            <span className="text-xs px-3 py-1 rounded-full bg-[rgba(21, 114, 19, 0.5)] text-[#A5B4FC] border border-[#A5B4FC]/20 font-medium">Picks Submitted</span>
           ) : pickStatus === 'draft' ? (
-            <span className="text-xs px-3 py-1 rounded-full bg-[rgba(251,191,36,0.12)] text-[#B45309] border border-[#D97706]/20 font-medium">Picks Saved</span>
+            <span className="text-xs px-3 py-1 rounded-full bg-[rgba(114, 71, 19, 0.5)] text-[#B45309] border border-[#D97706]/20 font-medium">Picks Saved</span>
           ) : isLocked ? (
             <span className="text-xs px-3 py-1 rounded-full bg-[rgba(245,243,238,0.6)] text-[#9CA3AF] inline-flex items-center gap-1">
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>

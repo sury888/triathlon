@@ -9,7 +9,7 @@ function scoreSideBets(pick, race) {
 let total = 0;
 const breakdown = {};
 
-race.sideBetsConfig.forEach(bet => {
+(race.sideBetsConfig || []).forEach(bet => {
 if (!bet.resolved) return;
 
 const userPick = pick.sideBets?.[bet.key];
@@ -165,7 +165,10 @@ totalScore
 async function scoreFantasyPicksForRace(raceId, results, fastest) {
 const picks = await Pick.find({ race: raceId })
 .populate('user')
-.populate('picks.athlete');
+.populate('picks.athlete')
+  .populate('fastestSplits.swim', 'name')
+  .populate('fastestSplits.bike', 'name')
+  .populate('fastestSplits.run', 'name');
 
 const race = await Race.findById(raceId);
 
@@ -249,6 +252,19 @@ fastestBreakdown.swim = scoreFastestPick(pick.fastestSplits?.swim, fastest.swim)
 fastestBreakdown.bike = scoreFastestPick(pick.fastestSplits?.bike, fastest.bike);
 fastestBreakdown.run = scoreFastestPick(pick.fastestSplits?.run, fastest.run);
 
+if (pick.fastestSplits?.swim){
+    const swimAth = pick.fastestSplits.swim;
+    fastestBreakdown.swimPick = {athlete: swimAth._id || swimAth, athleteName: swimAth.name || 'Unknown'};
+}
+if (pick.fastestSplits?.bike){
+    const bikeAth = pick.fastestSplits.bike;
+    fastestBreakdown.bikePick = {athlete: bikeAth._id || bikeAth, athleteName: bikeAth.name || 'Unknown'};
+}
+if (pick.fastestSplits?.run){
+    const runAth = pick.fastestSplits.run;
+    fastestBreakdown.runPick = {athlete: runAth._id || runAth, athleteName: runAth.name || 'Unknown'};
+}
+
 total += fastestBreakdown.swim + fastestBreakdown.bike + fastestBreakdown.run;
 
 // Side bets
@@ -263,7 +279,7 @@ athletePicks: athleteBreakdown,
 fastest: fastestBreakdown,
 sideBets: sideBreakdown
 };
-
+pick.markModified('fantasyBreakdown');
 await pick.save();
 }
 
@@ -274,70 +290,94 @@ return picks.length;
 // RECALCULATE ALL PAST RACE SCORES
 // ───────────────────────────────────────────────
 async function recalculateAllScores() {
-const scoredRaces = await Race.find({ status: 'Finished and Scored', 'results.0': { $exists: true } })
-.populate('results.athlete')
-.populate('startList.athlete');
+  const scoredRaces = await Race.find({ status: 'Finished and Scored', 'results.0': { $exists: true } });
 
-let racesRecalculated = 0;
-let picksRecalculated = 0;
+  let racesRecalculated = 0;
+  let picksRecalculated = 0;
 
-for (const race of scoredRaces) {
-// Re-score race results with current algorithm
-const startList = (race.startList || []).map(s => ({
-athlete: s.athlete?._id || s.athlete,
-startRank: s.startRank
-}));
+  for (const race of scoredRaces) {
+    try {
+      // Populate separately so we can catch bad refs
+      await race.populate('results.athlete');
+      await race.populate('startList.athlete');
 
-const finishers = race.results.map(r => ({
-athlete: r.athlete?._id || r.athlete,
-place: r.place,
-totalTimeSeconds: r.totalTimeSeconds,
-swimTimeSeconds: r.swimTimeSeconds,
-bikeTimeSeconds: r.bikeTimeSeconds,
-runTimeSeconds: r.runTimeSeconds,
-startRank: r.startRank,
-status: r.status
-})).filter(f => f.status !== 'DNF');
+      const startList = (race.startList || [])
+        .filter(s => s.athlete)
+        .map(s => ({
+          athlete: s.athlete?._id || s.athlete,
+          startRank: s.startRank
+        }));
 
-const scored = scoreRace(
-finishers,
-race.series,
-race.courseRecords?.swim || 0,
-race.courseRecords?.bike || 0,
-race.courseRecords?.run || 0,
-race.courseRecords?.total || 0,
-startList
-);
+      const finishers = race.results
+        .filter(r => r.athlete && r.status !== 'DNF')
+        .map(r => ({
+          athlete: r.athlete?._id || r.athlete,
+          place: r.place,
+          totalTimeSeconds: r.totalTimeSeconds,
+          swimTimeSeconds: r.swimTimeSeconds,
+          bikeTimeSeconds: r.bikeTimeSeconds,
+          runTimeSeconds: r.runTimeSeconds,
+          startRank: r.startRank,
+          status: r.status
+        }));
 
-// Update results in the race document
-for (const scoredFinisher of scored) {
-const resultEntry = race.results.find(r =>
-(r.athlete?._id || r.athlete).toString() === scoredFinisher.athlete.toString()
-);
-if (resultEntry) {
-resultEntry.score = scoredFinisher.score;
-resultEntry.breakdown = scoredFinisher.breakdown;
-}
-}
-await race.save();
+      if (finishers.length === 0) {
+        console.log('Skipping race (no valid finishers):', race.name);
+        continue;
+      }
 
-// Determine fastest splits for pick scoring
-const sortedBySwim = [...finishers].filter(f => f.swimTimeSeconds).sort((a, b) => a.swimTimeSeconds - b.swimTimeSeconds);
-const sortedByBike = [...finishers].filter(f => f.bikeTimeSeconds).sort((a, b) => a.bikeTimeSeconds - b.bikeTimeSeconds);
-const sortedByRun = [...finishers].filter(f => f.runTimeSeconds).sort((a, b) => a.runTimeSeconds - b.runTimeSeconds);
-const fastest = {
-swim: sortedBySwim[0]?.athlete || null,
-bike: sortedByBike[0]?.athlete || null,
-run: sortedByRun[0]?.athlete || null
-};
+      const scored = scoreRace(
+        finishers,
+        race.series,
+        race.courseRecords?.swim || race.swimCourseRecord || 0,
+        race.courseRecords?.bike || race.bikeCourseRecord || 0,
+        race.courseRecords?.run || race.runCourseRecord || 0,
+        race.courseRecords?.total || race.totalCourseRecord || 0,
+        startList
+      );
 
-// Re-score all fantasy picks for this race
-const count = await scoreFantasyPicksForRace(race._id, scored, fastest);
-picksRecalculated += count;
-racesRecalculated++;
-}
+      // Update results in the race document
+      for (const scoredFinisher of scored) {
+        const resultEntry = race.results.find(r =>
+          r.athlete && (r.athlete._id || r.athlete).toString() === scoredFinisher.athlete.toString()
+        );
+        if (resultEntry) {
+          resultEntry.score = scoredFinisher.score;
+          resultEntry.breakdown = scoredFinisher.breakdown;
+        }
+      }
 
-return { racesRecalculated, picksRecalculated };
+      // Set DNF scores to -10
+      for (const r of race.results) {
+        if (r.status === 'DNF') {
+          r.score = -10;
+          r.breakdown = null;
+        }
+      }
+
+      await race.save();
+
+      // Determine fastest splits
+      const sortedBySwim = [...finishers].filter(f => f.swimTimeSeconds).sort((a, b) => a.swimTimeSeconds - b.swimTimeSeconds);
+      const sortedByBike = [...finishers].filter(f => f.bikeTimeSeconds).sort((a, b) => a.bikeTimeSeconds - b.bikeTimeSeconds);
+      const sortedByRun = [...finishers].filter(f => f.runTimeSeconds).sort((a, b) => a.runTimeSeconds - b.runTimeSeconds);
+      const fastest = {
+        swim: sortedBySwim[0]?.athlete || null,
+        bike: sortedByBike[0]?.athlete || null,
+        run: sortedByRun[0]?.athlete || null
+      };
+
+      const count = await scoreFantasyPicksForRace(race._id, scored, fastest);
+      picksRecalculated += count;
+      racesRecalculated++;
+      console.log('Recalculated:', race.name, '- picks:', count);
+    } catch (err) {
+      console.error('Error recalculating race:', race.name, err.message);
+      // Skip this race and continue with others
+    }
+  }
+
+  return { racesRecalculated, picksRecalculated };
 }
 
 // ───────────────────────────────────────────────

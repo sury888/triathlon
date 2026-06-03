@@ -26,6 +26,7 @@ const pageNum = Math.max(1, parseInt(page, 10) || 1);
 const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 50));
 const skip = (pageNum - 1) * limitNum;
 
+
 const [races, total] = await Promise.all([
 Race.find(filter)
 .sort({ lockTime: 1 })
@@ -35,19 +36,24 @@ Race.find(filter)
 Race.countDocuments(filter)
 ]);
 
-const formatted = races.map(r => ({
-_id: r._id,
-id: r._id,
-name: r.name,
-location: r.location,
-lockTime: r.lockTime,
-date: r.date,
-status: r.status,
-gender: r.gender,
-series: r.series,
-hasStartList: Array.isArray(r.startList) && r.startList.length > 0,
-hasResults: Array.isArray(r.results) && r.results.length > 0
-}));
+const formatted = races.map(r => {
+  const baseName = r.name.replace(/\s*(Men|Women|Male|Female)\s*$/i, '').trim();
+  return{
+  _id: r._id,
+  id: r._id,
+  name: r.name,
+  eventName: baseName,
+  eventSlug: baseName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+  location: r.location,
+  lockTime: r.lockTime,
+  date: r.date,
+  status: r.status,
+  gender: r.gender,
+  series: r.series,
+  hasStartList: Array.isArray(r.startList) && r.startList.length > 0,
+  hasResults: Array.isArray(r.results) && r.results.length > 0
+  };
+});
 
 res.json({ data: formatted, page: pageNum, limit: limitNum, total, totalPages: Math.ceil(total / limitNum) });
 } catch (err) {
@@ -56,19 +62,39 @@ res.status(500).json({ error: 'Server error', details: err.message });
 };
 
 exports.getRaceById = async (req, res) => {
-try {
-const race = await Race.findById(req.params.id)
-.populate('startList', 'name gender country ptoRank')
-.populate('results', 'athlete place totalTime status penalties');
+  try {
+    const race = await Race.findById(req.params.id)
+      .populate('startList.athlete', 'name gender country ptoRanking wtsRanking swimRanking bikeRanking runRanking podiumPct winPct profilePicture')
+      .populate('results', 'athlete place totalTime status penalties');
 
-if (!race) return res.status(404).json({ error: 'Race not found' });
+    if (!race) return res.status(404).json({ error: 'Race not found' });
 
-res.json(race);
-} catch (err) {
-console.error('GET race error:', err);
-res.status(500).json({ error: 'Server error' });
-}
+    // Find sibling race (same location + season, opposite gender)
+    const oppositeGender = race.gender === 'M' ? 'F' : 'M';
+    
+    const sibling = await Race.findOne({
+      _id: { $ne: race._id },
+      gender: oppositeGender,
+      season: race.season,
+      series: race.series,
+      location: race.location
+    }).select('_id name gender');
+
+    console.log('Sibling lookup for', race.name, ':', sibling ? sibling.name : 'NOT FOUND');
+    console.log('  Query: gender=', oppositeGender, 'season=', race.season, 'series=', race.series, 'location=', race.location);
+
+    const raceObj = race.toObject();
+    if (sibling) {
+      raceObj.eventSiblings = [{ _id: sibling._id, name: sibling.name, gender: sibling.gender }];
+    }
+
+    res.json(raceObj);
+  } catch (err) {
+    console.error('GET race error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
 };
+
 
 exports.createRaces = async (req, res) => {
 try {
@@ -216,6 +242,7 @@ EST: "Estonia",
 SRB: "Serbia",
 KOR: "South Korea",
 Australia: "Australia",
+FPO: "Tahiti"
 // add more as needed
 };
 
@@ -385,7 +412,7 @@ status: 'Finished and Scored'
 })
 .sort({ lockTime: -1 })
 .limit(10)
-.populate('startList', 'name gender country ptoRank');
+.populate('startList.athlete', 'name gender country ptoRanking swimRanking bikeRanking runRanking profilePicture');
 
 res.json(races);
 } catch (err) {
@@ -402,7 +429,7 @@ status: { $in: ['Upcoming', 'Open'] }
 })
 .sort({ lockTime: 1 })
 .limit(10)
-.populate('startList', 'name gender country ptoRank');
+.populate('startList.athlete', 'name gender country ptoRanking swimRanking bikeRanking runRanking profilePicture');
 
 res.json(races);
 } catch (err) {
@@ -416,9 +443,9 @@ try {
 const races = await Race.find({
 status: 'Closed'
 })
-.sort({ lockTIme: 1 })
+.sort({ lockTime: 1 })
 .limit(10)
-.populate('startList', 'name gender country ptoRank');
+.populate('startList.athlete', 'name gender country ptoRanking swimRanking bikeRanking runRanking profilePicture');
 
 res.json(races);
 } catch (err) {
@@ -436,7 +463,7 @@ results: { $exists: true, $ne: [] } // must have results
 })
 .sort({ date: -1 })
 .limit(20)
-.populate("startList", "name gender country ptoRank")
+.populate("startList", "name gender country ptoRanking swimRanking bikeRanking runRanking profilePicture")
 .populate("results.athlete", "name gender country ptoRank");
 
 res.json(races);
@@ -515,7 +542,7 @@ totalTimeSeconds: parseTime(resEntry.totalTime),
 swimTimeSeconds: parseTime(resEntry.swimTime),
 bikeTimeSeconds: parseTime(resEntry.bikeTime),
 runTimeSeconds: parseTime(resEntry.runTime),
-status: resEntry.status || (resEntry.rank ? "Finished" : "DNF"),
+status: (!resEntry.rank && !resEntry.totalTime) ? "DNF" : (resEntry.status || (resEntry.rank ? "Finished" : "DNF")),
 startRank: Number(resEntry.startRank) || null
 };
 
@@ -568,7 +595,9 @@ $push: {
 raceScores: {
 race: race.name,
 raceId: race._id,
-score: result.score
+score: result.score,
+breakdown: result.breakdown || {},
+status: result.status || "Finished"
 }
 }
 }
@@ -689,7 +718,7 @@ error: "No side bets configured for this race"
 
 let updatedCount = 0;
 
-race.sideBetsConfig.forEach(bet => {
+(race.sideBetsConfig || []).forEach(bet => {
 if (Object.prototype.hasOwnProperty.call(results, bet.key)) {
 bet.result = results[bet.key];
 bet.resolved = true;
@@ -730,4 +759,105 @@ picksRecalculated: result.picksRecalculated
 console.error("Recalculate scores error:", err);
 res.status(500).json({ error: "Server error" });
 }
+};
+
+// ── CREATE PRIVATE RACE ──
+exports.createPrivateRace = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { name, date, location, genderMode, startList, sideBetsConfig, notes } = req.body;
+
+    if (!name || !date) return res.status(400).json({ error: 'Name and date are required' });
+    if (!startList || startList.length < 2) return res.status(400).json({ error: 'At least 2 athletes required' });
+
+    const crypto = require('crypto');
+    const inviteCode = crypto.randomBytes(4).toString('hex').toUpperCase();
+    const raceDate = new Date(date);
+    const lockTime = new Date(raceDate.getTime() - 24 * 60 * 60 * 1000); // 1 day before
+
+    // Create athlete documents for private race participants
+    const raceStartList = [];
+    for (let i = 0; i < startList.length; i++) {
+      const a = startList[i];
+      // Create or find athlete
+      let athlete = await Athlete.findOne({
+        name: { $regex: new RegExp(`^${a.name.trim()}$`, 'i') }
+      });
+      if (!athlete) {
+        athlete = await Athlete.create({
+          name: a.name.trim(),
+          gender:'M',
+          country: a.country || '',
+        });
+      }
+      raceStartList.push({
+        athlete: athlete._id,
+        startRank: i + 1,
+        athleteName: a.name.trim()
+      });
+    }
+
+    const race = await Race.create({
+      name,
+      location: location || 'Private Event',
+      gender:  'M',
+      series: 'Custom',
+      season: new Date().getFullYear(),
+      date: raceDate,
+      lockTime,
+      status: raceDate > new Date() ? 'Open' : 'Upcoming',
+      startList: raceStartList,
+      sideBetsConfig: (sideBetsConfig || []).map(b => ({
+        ...b,
+        points: b.difficulty === 'hard' ? 15 : b.difficulty === 'medium' ? 10 : 5,
+        resolved: false,
+        result: null
+      })),
+      isPrivate: true,
+      createdBy: userId,
+      allowedUsers: [userId],
+      inviteCode,
+      notes: notes || null
+    });
+
+    res.status(201).json(race);
+  } catch (err) {
+    console.error('Create private race error:', err);
+    res.status(500).json({ error: 'Server error', details: err.message });
+  }
+};
+
+// ── INVITE USERS TO PRIVATE RACE ──
+exports.inviteToRace = async (req, res) => {
+  try {
+    const race = await Race.findById(req.params.id);
+    if (!race) return res.status(404).json({ error: 'Race not found' });
+    if (!race.isPrivate) return res.status(400).json({ error: 'Race is not private' });
+
+    const { emails } = req.body;
+    // Just acknowledge — you can add email sending logic later
+    res.json({ message: 'Users invited', inviteCode: race.inviteCode });
+  } catch (err) {
+    console.error('Invite error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+// ── JOIN PRIVATE RACE VIA INVITE CODE ──
+exports.joinPrivateRace = async (req, res) => {
+  try {
+    const race = await Race.findOne({ inviteCode: req.params.inviteCode, isPrivate: true });
+    if (!race) return res.status(404).json({ error: 'Invalid invite code' });
+
+    const userId = req.user.userId;
+    if (!race.allowedUsers.includes(userId)) {
+      race.allowedUsers.push(userId);
+      await race.save();
+    }
+
+    res.json({ message: 'Joined private race', race: { _id: race._id, name: race.name } });
+  } catch (err) {
+    console.error('Join race error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
 };

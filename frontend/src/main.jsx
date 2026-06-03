@@ -9,22 +9,24 @@ import ErrorBoundary from './components/ErrorBoundary'
 import App from './App'
 import './index.css'
 
+console.log(import.meta.env.VITE_API_URL)
+
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
+console.log("GOOGLE_CLIENT_ID:", GOOGLE_CLIENT_ID)
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <ErrorBoundary>
-      <HelmetProvider>
-        <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-          <BrowserRouter>
-            <AuthProvider>
-              <ThemeProvider>
-                <App />
-              </ThemeProvider>
-            </AuthProvider>
-          </BrowserRouter>
-        </GoogleOAuthProvider>
-      </HelmetProvider>
-    </ErrorBoundary>
-  </StrictMode>
+ <StrictMode>
+  <HelmetProvider>
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      <BrowserRouter>
+        <AuthProvider>
+          <ThemeProvider>
+            <App />
+          </ThemeProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </GoogleOAuthProvider>
+  </HelmetProvider>
+</StrictMode>
+
 )

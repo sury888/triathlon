@@ -17,6 +17,8 @@ router.get('/:id/leaderboard/season', lb.getSeasonLeaderboard);
 //idk if we need this
 router.get('/:id/leaderboard/alltime', lb.getAllTimeLeaderboard);
 //maybe need a league all time 
+router.get('/athlete/:athleteId', lb.athleteDetail);
+router.get('/user/:userId', lb.userDetail);
 
 
 module.exports = router;

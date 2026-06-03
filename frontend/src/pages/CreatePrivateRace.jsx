@@ -22,7 +22,7 @@ export default function CreatePrivateRace() {
   const [loading, setLoading] = useState(false)
 
 
-  const addAthlete = () => setAthletes([...athletes, { name: '', gender: genderMode === 'combined' ? 'A' : 'M', country: '' }])
+  const addAthlete = () => setAthletes([...athletes, { name: '', gender: 'M', country: '' }])
 
   const removeAthlete = (i) => {
     if (athletes.length <= 1) return
@@ -72,7 +72,7 @@ export default function CreatePrivateRace() {
         genderMode,
         startList: validAthletes.map(a => ({
           name: a.name.trim(),
-          gender: genderMode === 'combined' ? 'A' : (a.gender || 'M'),
+          gender: genderMode === a.gender || 'M',
           country: a.country?.trim() || undefined
         })),
         sideBetsConfig: validSideBets,

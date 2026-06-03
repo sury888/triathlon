@@ -4,7 +4,7 @@ const { authMiddleware } = require('../middleware/auth');
 
 // PICKS (placeholders)
 //{user, name, menPicks, womenPicks, fastestMen{swim, bike, run}, fastestWomen{swim, bike, run}, sideBets:{men, women}}
-router.post('/', authMiddleware, pick.createPick);
+router.post('/', authMiddleware, pick.upsertPick);
 router.put('/:id', authMiddleware, pick.updatePick);
 
 router.get('/user/:userId', pick.getUserPicks);

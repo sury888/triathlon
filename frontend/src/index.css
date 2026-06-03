@@ -292,14 +292,14 @@ h1, h2, h3 {
 
 /* ── Title gradient text ── */
 .title-gradient {
-  background: linear-gradient(90deg, #D0A242 0%, #E8C777 25%, #F5E1A4 50%, #D0A242 75%, #8B6914 100%) !important;
+  background: linear-gradient(90deg, #D0A242 0%, #D0A242 25%, #D0A242 50%, #D0A242 75%, #8B6914 100%) !important;
   -webkit-background-clip: text !important;
   background-clip: text !important;
   -webkit-text-fill-color: transparent !important;
   color: transparent !important;
 }
 [data-theme="dark"] .title-gradient {
-  background: linear-gradient(90deg, #4CD9A5 0%, #15A780 30%, #A7F3D0 50%, #15A780 70%, #065F46 100%) !important;
+  background: linear-gradient(90deg, #05634a 0%, #04503b 30%, #04523e 50%, #04513c 70%, #056d52 100%) !important;
   -webkit-background-clip: text !important;
   background-clip: text !important;
   -webkit-text-fill-color: transparent !important;

@@ -2,18 +2,22 @@
 const mongoose = require('mongoose');
 
 async function connectDB() {
-let MONGO_URI = process.env.MONGO_URI;
+const MONGO_URI = process.env.MONGO_URI;
 
 if (!MONGO_URI) {
+  throw new Error("❌ MONGO_URI is missing — backend cannot start.");
+}
+
+/*if (!MONGO_URI) {
 const username = process.env.MONGO_USER || 'suryyadav';
-const rawPassword = process.env.MONGO_PASSWORD || '';
+const rawPassword = process.env.MONGO_PASSWORD || 'Sury1234';
 const password = encodeURIComponent(rawPassword);
 const cluster = 'cluster0.vjidkbz.mongodb.net';
-const dbName = process.env.MONGO_DB_NAME || 'triFantasy';
+const dbName = process.env.MONGO_DB_NAME || 'cluster0';
 
 MONGO_URI = `mongodb+srv://${username}:${password}@${cluster}/${dbName}?retryWrites=true&w=majority`;
 }
-
+*/
 console.log('Attempting MongoDB connection...');
 await mongoose.connect(MONGO_URI, {
 serverSelectionTimeoutMS: 5000,

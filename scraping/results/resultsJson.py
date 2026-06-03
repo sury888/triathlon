@@ -79,7 +79,7 @@ def get_full_country(code):
 # ========================= CONFIG =========================
 CSV_FILE = "tri fanta - NZ Results.csv"
 JSON_FILE = "nz_results.json"
-RACE_NAME = "Ironman 70.3 Aix-en-Provence 2026"
+RACE_NAME = "T100 Spain 2026"
 # =========================================================
 
 data = []

@@ -55,6 +55,7 @@ export default function Rules() {
   const dark = theme === 'dark'
   const [openFaq, setOpenFaq] = useState(null)
   const [scheduleTab, setScheduleTab] = useState('All')
+  
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
@@ -566,9 +567,9 @@ export default function Rules() {
               onClick={() => setOpenFaq(openFaq === i ? null : i)}
               className="w-full text-left"
             >
-              <div className={`p-4 rounded-lg border transition-colors ${openFaq === i ? 'bg-[rgba(216,221,223,0.45)] border-[#D0A242]/20' : 'bg-[rgba(216,221,223,0.45)]/40 border-[rgba(180,190,200,0.3)] hover:border-[rgba(180,190,200,0.3)]'}`}>
+              <div className={`p-4 rounded-lg border transition-colors ${openFaq === i ? (dark ? 'bg-[#1A2233] border-[#D0A242]/20' : 'bg-[rgba(216,221,223,0.45)] border-[#D0A242]/20') : (dark ?'bg-[#0E1421] border-[#1E293B] hover:border-[#334155]': 'bg-[rgba(216,221,223,0.45)]/40 border-[rgba(180,190,200,0.3)] hover:border-[rgba(180,190,200,0.3)]')}`}>
                 <div className="flex items-center justify-between">
-                  <span className="font-medium text-sm text-[#1F2937]">{q}</span>
+                  <span className="font-medium text-sm ${dark ? 'text-[#1F2937]' : 'text-[#1F2937]'}">{q}</span>
                   <svg className={`w-4 h-4 text-[#9CA3AF] transition-transform ${openFaq === i ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>

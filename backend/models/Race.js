@@ -15,13 +15,13 @@ trim: true
 },
 series: {
 type: String,
-enum: ['Ironman 70.3 Pro Series', 'Challenge', 'Ironman Pro Series', 'T100', 'WTCS', 'Ironman 70.3', 'Ironman'],
+enum: ['Ironman 70.3 Pro Series', 'Challenge', 'Ironman Pro Series', 'T100', 'WTCS', 'Ironman 70.3', 'Ironman', 'Other', 'Custom'],
 required: [true, "Race series is required"],
 trim: true
 },
 gender: {
 type: String,
-enum: ['M', 'F'],
+enum: ['M', 'F', 'A'],
 required: true
 },
 season: {
@@ -175,3 +175,5 @@ raceSchema.virtual('isLocked').get(function () {
 if (!this.lockTime) return false;
 return new Date() >= this.lockTime;
 });
+
+module.exports = mongoose.model('Race', raceSchema);

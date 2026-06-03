@@ -210,7 +210,10 @@ function UserInlineBreakdown({ userId, leagueId, selectedSeason }) {
   }, [userId])
 
   if (loading) return <div className={`mx-4 mt-1 p-4 rounded-b-lg border border-t-0 ${dark ? 'bg-[#0A0F1A] border-[rgba(255,255,255,0.1)]' : 'bg-[rgba(216,221,223,0.45)]/40 border-[rgba(180,190,200,0.3)]/30'}`}><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#D0A242] mx-auto" /></div>
-  if (!data) return null
+  //if (!data) return null
+  if (!data || !data.raceDetails || data.raceDetails.length === 0){
+    return <div className="mx-4 mt-1 p-1 text-sm text=[#9CA3Af] text-center"> No scored events yet</div>
+  }
 
   const { raceDetails = [], bestOfTotal } = data
   const SERIES_ORDER = ['T100', 'Ironman Pro Series', 'Ironman 70.3 Pro Series', 'WTCS', 'Other']
@@ -694,7 +697,10 @@ export default function LeagueDetail() {
               return (
                 <div key={entry.userId || i}>
                   <button
-                    onClick={() => toggleUser(entry.userId)}
+                    onClick={() => {
+                      if (entry.totalPoints === 0 && entry.picksCount === 0) return;
+                      toggleUser(entry.userId);
+                    }}
                     className={`w-full flex items-center gap-4 px-4 py-3 rounded-lg text-left transition-colors ${
                       isYou ? (dark ? 'bg-[rgba(21,167,128,0.1)] hover:bg-[rgba(21,167,128,0.15)] border-l-2 border-[#15A780]/30' : 'bg-[rgba(208,162,66,0.06)] hover:bg-[rgba(245,243,238,0.35)] border-l-2 border-white/30') : (dark ? 'bg-[#0E1421] hover:bg-[#131A2B] border border-[rgba(255,255,255,0.12)]' : 'bg-[rgba(216,221,223,0.45)] hover:bg-[#E8E3DA]/60 border border-[rgba(180,190,200,0.3)]/30')
                     }`}

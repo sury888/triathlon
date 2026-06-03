@@ -39,9 +39,12 @@ if (league.members.includes(userId)) {
 return res.json({ message: "Already a member" });
 }
 
-if (league.isPrivate && !league.comparePassword(password)) {
-return res.status(403).json({ error: "Incorrect password" });
+
+if (league.isPrivate){
+  if(!password) return res.status(400).json({ error: "Password required for private league" });
+  if (!league.comparePassword(password)) return res.status(403).json({ error: "Incorrect password" });
 }
+
 
 league.members.push(userId);
 await league.save();
@@ -163,7 +166,7 @@ if (!q || q.trim() === "") {
 filter = { isPrivate: false };
 } else {
 const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-filter = { name: { $regex: escaped, $options: 'i' } };
+filter = { name: { $regex: escaped, $options: 'i' }, isPrivate: false };
 }
 
 const [leagues, total] = await Promise.all([
@@ -221,7 +224,8 @@ user: { $in: league.members }
 const userMap = new Map();
 league.members.forEach(m => userMap.set(m._id.toString(), []));
 
-picks.forEach(p => {
+const scoredPicks = picks.filter(p => p.race?.status === "Finished and Scored");
+scoredPicks.forEach(p => {
 const uid = p.user.toString();
 if (userMap.has(uid)) {
 userMap.get(uid).push(p);
@@ -260,19 +264,22 @@ const total =
 (groups.bonusRace.slice(0, scoring.bonusRace).reduce((a, b) => a + b, 0));
 
 standings.push({
-user: member.name,
-userId: member._id,
-total,
+  name: member.name,
+  userId: member._id,
+totalPoints: total,
+picksCount: userPicks.length,
 breakdown: groups
 });
 }
 
 // Sort standings
-standings.sort((a, b) => b.total - a.total);
+standings.sort((a, b) => b.totalPoints - a.totalPoints);
 
 res.json({
 league: league.name,
-standings
+leaderboard: standings,
+scoringStructure: scoring, 
+availableSeason:[2026]
 });
 
 } catch (err) {
@@ -297,8 +304,8 @@ user: { $in: league.members }
 // Group picks by user
 const userMap = new Map();
 league.members.forEach(m => userMap.set(m._id.toString(), []));
-
-picks.forEach(p => {
+const scoredPicks = picks.filter(p => p.race?.status === "Finished and Scored");
+scoredPicks.forEach(p => {
 const uid = p.user.toString();
 if (userMap.has(uid)) {
 userMap.get(uid).push(p);
@@ -390,10 +397,13 @@ total: 0,
 races: []
 });
 });
+const scoredPicks = picks.filter(p => p.race?.status === "Finished and Scored");
 
-picks.forEach(pick => {
+scoredPicks.forEach(pick => {
 const uid = pick.user._id.toString();
 if (!totals.has(uid)) return;
+
+if (pick.race?.isScored) {
 
 totals.get(uid).total += pick.fantasyScoreTotal || 0;
 
@@ -403,6 +413,7 @@ raceName: pick.race?.name,
 series: pick.race?.series,
 score: pick.fantasyScoreTotal
 });
+}
 });
 
 // Convert map → array
@@ -421,3 +432,15 @@ console.error("League leaderboard error:", err);
 res.status(500).json({ error: "Server error" });
 }
 };
+
+exports.getLeagueById = async (req, res) => {
+try {
+  const league = await League.findById(req.params.id)
+    .populate('members', 'name email')
+        .populate('admin', 'name email');
+        if (!league) return res.status(404).json({ error: "League not found" });
+  res.json(league);
+} catch (err) {
+  console.error("Get league error:", err);
+  res.status(500).json({ error: "Server error" });
+}};

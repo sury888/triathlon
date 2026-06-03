@@ -4,7 +4,7 @@ const path = require('path');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
-const mongoSanitize = require('express-mongo-sanitize');
+//const mongoSanitize = require('express-mongo-sanitize');
 const mongoose = require('mongoose');
 const { connectDB } = require('./config/db');
 const {errorHandler} = require('./middleware/errorHandler');
@@ -36,11 +36,11 @@ app.use(helmet());
 app.use(cors({
   origin: process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',')
-    : ['http://localhost:3000'],
+    : ['http://localhost:5173'],
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
-app.use(mongoSanitize());
+//app.use(mongoSanitize());
 
 // ── Request logging ──
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
@@ -48,7 +48,7 @@ app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 // ── Rate limiting ──
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: 200,
   message: { error: 'Too many requests, please try again later' }
 });
 app.use('/api/v1/auth', authLimiter);

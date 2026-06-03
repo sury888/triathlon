@@ -33,10 +33,14 @@ default: {}
 },
 
 fantasyScoreTotal: { type: Number, default: 0 },
-fantasyBreakdown: {
-athletePicks: { type: Object, default: {} },
-fastest: { type: Object, default: {} },
-sideBets: { type: Object, default: {} }
+/*fantasyBreakdown: {
+    athletePicks: { type: Object, default: {} },
+    fastest: { type: Object, default: {} },
+    sideBets: { type: Object, default: {} }
+},*/
+fantasyBreakdown:{
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
 },
 leaderboardVisibility: {
 global: {
@@ -48,7 +52,7 @@ type: mongoose.Schema.Types.ObjectId,
 ref: 'League'
 }]
 },
-
+status: {type: String, enum:['saved', 'submitted'], default: 'saved'},
 createdAt: { type: Date, default: Date.now }
 });
 

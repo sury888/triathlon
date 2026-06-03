@@ -7,27 +7,17 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    async function init() {
-      // Always try auto-login to ensure token matches current server state
-      try {
-        const { data } = await api.get('/auth/auto-login')
-        localStorage.setItem('token', data.token)
-        localStorage.setItem('refreshToken', data.refreshToken)
-        localStorage.setItem('user', JSON.stringify(data.user))
-        setUser(data.user)
-      } catch {
-        // auto-login not available, try stored token
-        const token = localStorage.getItem('token')
-        const storedUser = localStorage.getItem('user')
-        if (token && storedUser) {
-          setUser(JSON.parse(storedUser))
-        }
-      }
-      setLoading(false)
-    }
-    init()
-  }, [])
+ useEffect(() => {
+  const token = localStorage.getItem('token')
+  const storedUser = localStorage.getItem('user')
+
+  if (token && storedUser) {
+    setUser(JSON.parse(storedUser))
+  }
+
+  setLoading(false)
+}, [])
+
 
   const login = async (email, password) => {
     const { data } = await api.post('/auth/login', { email, password })

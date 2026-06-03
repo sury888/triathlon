@@ -23,7 +23,7 @@ router.post('/google', auth.googleLogin);
 // PASSWORD RESET
 /*{"email": "Email"}*/
 //now actually send the email and check if account actually exists
-router.post('/forgotPassword', auth.forgotPassword);
+router.post('/forgot-password', auth.forgotPassword);
 
 /*{  "token": "RESET_TOKEN",
   "newPassword": "newStrongPassword123"}*/
