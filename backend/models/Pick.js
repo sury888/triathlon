@@ -53,7 +53,8 @@ ref: 'League'
 }]
 },
 status: {type: String, enum:['saved', 'submitted'], default: 'saved'},
-createdAt: { type: Date, default: Date.now }
+createdAt: { type: Date, default: Date.now }, 
+status: {type: String, enum: ['draft', 'submitted'], default: 'draft'}
 });
 
 module.exports = mongoose.model('Pick', pickSchema);

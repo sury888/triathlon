@@ -38,6 +38,9 @@ router.put('/:id/private', authMiddleware, race.updatePrivateRace);
 router.put('/:id', authMiddleware, adminOnly, race.updateRace);
 
 router.put('/:id/startlist', authMiddleware, adminOnly, race.updateStartList);
+router.post('/:id/results', authMiddleware, race.submitPrivateRaceResults);
+
+
 
 // router.post('/:id/processResults', authMiddleware, race.processResults);
 

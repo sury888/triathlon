@@ -84,6 +84,7 @@ errors.push(`Predicted place must be between 1 and ${totalField}`);
 });
 
 // Underdog rules
+if(!race.isPrivate) {
 const underdogs = pick.picks.filter(p => p.isUnderdog);
 
 if (underdogs.length !== 1) {
@@ -99,6 +100,7 @@ if (!entry) {
 errors.push("Underdog athlete not in start list.");
 } else if (entry.startRank <= totalField / 2) {
 errors.push("Underdog must be in bottom half of field.");
+}
 }
 }
 
@@ -211,8 +213,9 @@ $set: {
 picks,
 fastestSplits,
 sideBets,
-status: (picks?.length === 5 && picks.filter(p => p.isUnderdog).length === 1
-&& fastestSplits?.swim && fastestSplits?.bike && fastestSplits?.run) ? 'submitted' : 'saved',
+//status: (picks?.length === 5 && picks.filter(p => p.isUnderdog).length === 1
+//&& fastestSplits?.swim && fastestSplits?.bike && fastestSplits?.run) ? 'submitted' : 'saved',
+status: req.body.status || 'draft',
 fantasyScoreTotal: 0,
 fantasyBreakdown: {}
 }

@@ -22,10 +22,33 @@ error: "Password must be at least 8 characters, include one uppercase letter and
 }
 
 const user = await User.create({ name, email, password });
-const safeUser = user.toObject();
-delete safeUser.password;
-delete safeUser.refreshToken;
-res.status(201).json(safeUser);
+const accessToken = jwt.sign(
+    {userId: user._id},
+    process.env.JWT_SECRET,
+    {expiresIn: '30d'}
+);
+const refreshToken = jwt.sign(
+    {userId: user._id},
+    process.env.JWT_REFRESH_SECRET,
+    {expiresIn: '30d'}
+);
+user.refreshToken = refreshToken;
+await user.save();
+res.status(201).json({
+    token: accessToken,
+    refreshToken,
+    user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        avatar: user.avatar,
+        bio: user.bio,
+        preferences: user.preferences,
+        favoriteLeagues: user.favoriteLeagues
+
+    }
+});
 });
 
 exports.listUsers = asyncHandler(async (req, res) => {

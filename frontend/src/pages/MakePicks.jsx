@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useParams, useNavigate, useLocation } from 'react-router-dom'
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import api from '../utils/api'
 import PageMeta from '../components/PageMeta'
@@ -519,10 +519,11 @@ errors.push(`${label}: An athlete cannot be picked twice`)
 if (!race?.isPrivate && (gs.underdogIndex === -1 || !gs.slots[gs.underdogIndex])) {
 errors.push(`${label}: You must designate one pick as your underdog (bottom half of the field by start rank)`)
 }
-
+if(!race?.isPrivate){
 if (!gs.splits.swim) errors.push(`${label}: Select fastest swimmer`)
 if (!gs.splits.bike) errors.push(`${label}: Select fastest biker`)
 if (!gs.splits.run) errors.push(`${label}: Select fastest runner`)
+}
 }
 return errors
 }
@@ -537,6 +538,19 @@ if (!hasAnyPicks) return
 
 setSaveStatus('saving')
 try {
+const allComplete = Object.keys(stateToSave).every(g => {
+const gs = stateToSave[g]
+const raceForGender = getRaceForGender(g)
+if (!raceForGender?.startList?.length) return true
+const fieldSize = raceForGender.startList.length
+const requiredPicks = Math.min(5, fieldSize)
+const filledSlots = gs.slots.filter(s => s !== null).length
+if (race?.isPrivate) return filledSlots >= requiredPicks
+return gs.slots.every(s => s !== null) && gs.splits.swim && gs.splits.bike && gs.splits.run
+})
+
+const pickStatus = allComplete ? 'submitted' : 'draft'
+
 for (const g of Object.keys(stateToSave)) {
 const gs = stateToSave[g]
 const filledSlots = gs.slots.map((s, i) => s ? { slot: i, entry: s } : null).filter(Boolean)
@@ -559,20 +573,12 @@ run: gs.splits.run ? (gs.splits.run.athlete?._id || gs.splits.run.athlete) : und
 },
 sideBets: sideBetsToSave,
 globalOptIn: gs.globalOptIn,
+status: pickStatus
 })
 }
 
 isDirty.current = false
-const allComplete = Object.keys(stateToSave).every(g => {
-const gs = stateToSave[g]
-const raceForGender = getRaceForGender(g)
-if (!raceForGender?.startList?.length) return true
-const fieldSize = raceForGender.startList.length
-const requiredPicks = Math.min(5, fieldSize)
-const filledSlots = gs.slots.filter(s => s !== null).length
-if (race?.isPrivate) return filledSlots >= requiredPicks
-return gs.slots.every(s => s !== null) && gs.splits.swim && gs.splits.bike && gs.splits.run
-})
+
 setSaveStatus(allComplete ? 'submitted' : 'saved')
 } catch {
 setSaveStatus('')
@@ -844,10 +850,17 @@ onLeave={() => { setShowLeaveWarning(false); navigate(-1) }}
 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2">
 <div>
 <button onClick={handleBack} className="text-sm text-[#D0A242] hover:text-[#C4963A] mb-0.5 inline-block">&larr; Back to Races</button>
-<h1 className="text-2xl font-bold">{race.eventName || race.name}</h1>
-<p className="text-sm text-[#9CA3AF]">
-{race.location} &bull; {race.series} &bull; Locks {new Date(race.lockTime).toLocaleString()}
-</p>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold">{race.eventName || race.name}</h1>
+              {race.isPrivate && user && String(race.createdBy) === String(user._id) && (
+                <Link to={`/races/${race._id}/edit`} className="px-3 py-1 rounded-lg bg-[#E8E3DA] hover:bg-[#F0EDE8] text-[#1F2937] text-xs font-semibold transition-colors">
+                  Edit Race
+                </Link>
+              )}
+            </div>
+            <p className="text-sm text-[#9CA3AF]">
+              {race.location} &bull; {race.series} &bull; Locks {new Date(race.lockTime).toLocaleString()}
+            </p>
 </div>
 <div className="flex items-center gap-3">
 <div className="text-sm">
@@ -887,6 +900,13 @@ className="px-3 py-1.5 rounded-lg text-sm bg-[rgba(208,162,66,0.08)] text-[#C496
 </button>
 </div>
 )}
+{
+race?.notes && (
+    <div className="card mt-3 p-4">
+        <h3 className="text-sm font-bold text-[#D0A242] mb-2">Race Notes</h3>
+        <p className="text-sm text-[#6B7280] whitespace-pre-wrap">{race.notes}</p>
+    </div>
+) }
 
 {error && <div className="bg-[rgba(251,113,133,0.1)] border border-[#BE123C]/40 text-[#E11D48] rounded-lg px-4 py-2 mt-3 text-sm">{error}</div>}
 {success && <div className="bg-[rgba(208,162,66,0.08)] border border-[#D0A242]/30 text-[#D0A242] rounded-lg px-4 py-2 mt-3 text-sm">{success}</div>}

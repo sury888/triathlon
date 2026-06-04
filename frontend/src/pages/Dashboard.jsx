@@ -4,10 +4,9 @@ import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import api from '../utils/api'
 import PageMeta from '../components/PageMeta'
-import {useLocation} from 'react-outer-dom'
 
-const location = useLocation()
-const [welcomeMsg, setWelcomeMsg] = useState(location.state?.registered ? 'Account created! Welcome to Fantasy Endurance.' : '')
+//const routeLocation = useLocation()
+//const [welcomeMsg, setWelcomeMsg] = useState(routeLocation.state?.registered ? 'Account created! Welcome to Fantasy Endurance.' : '')
 
 const SERIES_STYLES = {
   'T100': { background: 'rgba(236,72,153,0.12)', color: '#DB2777', backdropFilter: 'blur(8px)', border: '1px solid rgba(236,72,153,0.35)' },
@@ -354,12 +353,9 @@ export default function Dashboard() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-10">
       <PageMeta title="Dashboard" description="Your triathlon fantasy dashboard" />
-      {welcomeMsg && (
-        <div className="p-3 rounded bg-[rgba(208,162,66,0.1)] border border-[rgba(208,162,66,0.25)] text-[#D0A242] text-sm font-medium flex items-center justify-between">
-          <span>{welcomeMsg}</span>
-          <button onClick={() => setWelcomeMsg('')} className="text-[#D0A242] hover:text-[#1F2937]"></button>
-        </div>
-      )}
+      
+
+      
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">

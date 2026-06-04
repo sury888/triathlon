@@ -17,8 +17,8 @@ recalculateAllScores
 exports.getRaces = async (req, res) => {
 try {
 const { series, status, page = 1, limit = 50 } = req.query;
+//const filter = {isPrivate: { $ne: true }};
 const filter = {};
-
 if (series) filter.series = series;
 if (status === 'upcoming') filter.lockTime = { $gte: new Date() };
 
@@ -32,7 +32,7 @@ Race.find(filter)
 .sort({ lockTime: 1 })
 .skip(skip)
 .limit(limitNum)
-.select('name location lockTime status startList results gender series date'),
+.select('name location lockTime status startList results gender series date isPrivate createdBy eventSlug eventName notes allowedUsers'),
 Race.countDocuments(filter)
 ]);
 
@@ -49,7 +49,13 @@ const formatted = races.map(r => {
   date: r.date,
   status: r.status,
   gender: r.gender,
+  isPrivate: r.isPrivate,
+  createdBy: r.createdBy,
+  //eventSlug: r.eventSlug || r._id.toString(),
+  //eventName: r.eventName || r.name,
+  notes: r.notes,
   series: r.series,
+  allowedUsers: (r.allowedUsers || []).map(u => u.toString()),
   hasStartList: Array.isArray(r.startList) && r.startList.length > 0,
   hasResults: Array.isArray(r.results) && r.results.length > 0
   };
@@ -68,6 +74,20 @@ exports.getRaceById = async (req, res) => {
       .populate('results', 'athlete place totalTime status penalties');
 
     if (!race) return res.status(404).json({ error: 'Race not found' });
+
+    if (race.isPrivate){
+      const token = req.headers.authorization?.split(' ')[1];
+      let userId = null;
+      if (token) {
+        try {
+          const jwt = require('jsonwebtoken');
+          const decoded = jwt.verify(token, process.env.JWT_SECRET);
+          userId = decoded.userId;
+        } catch {}
+    }
+    if (!userId || (String(race.createdBy) !== String(userId) && !race.allowedUsers.some(u => String(u) === String(userId)))) {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }}
 
     // Find sibling race (same location + season, opposite gender)
     const oppositeGender = race.gender === 'M' ? 'F' : 'M';
@@ -406,10 +426,21 @@ res.status(500).json({ error: "Server error", details: err.message });
 
 exports.getFinishedRaces = async (req, res) => {
 try {
-const races = await Race.find({
-lockTime: { $lte: new Date() },
-status: 'Finished and Scored'
-})
+ let userId = null
+  const token = req.headers.authorization?.split(' ')[1]
+  if (token) {
+    try { const jwt = require('jsonwebtoken'); userId = jwt.verify(token, process.env.JWT_SECRET).userId} catch {}
+  }
+  const baseFilter = {lockTime: { $gte: new Date() }, status: "Finished and Scored"}
+  const races = await Race.find({
+    $and : [
+      baseFilter,
+      { $or: [
+        {isPrivate: { $ne:true } },
+        ...(userId ? [{...baseFilter, isPrivate: true, $or: [{createdBy: userId }, {allowedUsers: userId}] }] : [])
+      ]}
+    ]
+  })
 .sort({ lockTime: -1 })
 .limit(10)
 .populate('startList.athlete', 'name gender country ptoRanking swimRanking bikeRanking runRanking profilePicture');
@@ -423,10 +454,26 @@ res.status(500).json({ error: 'Server error' });
 
 exports.getUpcomingRaces = async (req, res) => {
 try {
-const races = await Race.find({
-lockTime: { $gte: new Date() },
-status: { $in: ['Upcoming', 'Open'] }
-})
+  let userId = null
+  const token = req.headers.authorization?.split(' ')[1]
+  if (token) {
+    try { const jwt = require('jsonwebtoken'); userId = jwt.verify(token, process.env.JWT_SECRET).userId} catch {}
+  }
+  const baseFilter = {lockTime: { $gte: new Date() }, status: { $in: ['Upcoming', 'Open']}}
+  const races = await Race.find({
+    $and : [
+      baseFilter,
+      { $or: [
+        {isPrivate: { $ne:true } },
+        ...(userId ? [{...baseFilter, isPrivate: true, $or: [{createdBy: userId }, {allowedUsers: userId}] }] : [])
+      ]}
+    ]
+  })
+// const races = await Race.find({
+// lockTime: { $gte: new Date() },
+// status: { $in: ['Upcoming', 'Open'] }, 
+// isPrivate: { $ne: true }
+
 .sort({ lockTime: 1 })
 .limit(10)
 .populate('startList.athlete', 'name gender country ptoRanking swimRanking bikeRanking runRanking profilePicture');
@@ -440,9 +487,21 @@ res.status(500).json({ error: 'Server error' });
 
 exports.getCurrentRaces = async (req, res) => {
 try {
-const races = await Race.find({
-status: 'Closed'
-})
+  let userId = null
+  const token = req.headers.authorization?.split(' ')[1]
+  if (token) {
+    try { const jwt = require('jsonwebtoken'); userId = jwt.verify(token, process.env.JWT_SECRET).userId} catch {}
+  }
+  const baseFilter = {lockTime: { $gte: new Date() }, status: "Closed"}
+ const races = await Race.find({
+    $and : [
+      baseFilter,
+      { $or: [
+        {isPrivate: { $ne:true } },
+        ...(userId ? [{...baseFilter, isPrivate: true, $or: [{createdBy: userId }, {allowedUsers: userId}] }] : [])
+      ]}
+    ]
+  })
 .sort({ lockTime: 1 })
 .limit(10)
 .populate('startList.athlete', 'name gender country ptoRanking swimRanking bikeRanking runRanking profilePicture');
@@ -456,11 +515,21 @@ res.status(500).json({ error: 'Server error' });
 
 exports.getScoredRaces = async (req, res) => {
 try {
-const races = await Race.find({
-status: "Finished and Scored",
-date: { $lte: new Date() },
-results: { $exists: true, $ne: [] } // must have results
-})
+  let userId = null
+  const token = req.headers.authorization?.split(' ')[1]
+  if (token) {
+    try { const jwt = require('jsonwebtoken'); userId = jwt.verify(token, process.env.JWT_SECRET).userId} catch {}
+  }
+  const baseFilter = {lockTime: { $gte: new Date() }, status: "Finished and Scored"}
+  const races = await Race.find({
+    $and : [
+      baseFilter,
+      { $or: [
+        {isPrivate: { $ne:true } },
+        ...(userId ? [{...baseFilter, isPrivate: true, $or: [{createdBy: userId }, {allowedUsers: userId}] }] : [])
+      ]}
+    ]
+  })
 .sort({ date: -1 })
 .limit(20)
 .populate("startList", "name gender country ptoRanking swimRanking bikeRanking runRanking profilePicture")
@@ -776,7 +845,7 @@ exports.createPrivateRace = async (req, res) => {
     const crypto = require('crypto');
     const inviteCode = crypto.randomBytes(4).toString('hex').toUpperCase();
     const raceDate = new Date(date);
-    const lockTime = new Date(raceDate.getTime() - 24 * 60 * 60 * 1000); // 1 day before
+    const lockTime = (raceDate); // 1 day before
 
     // Create athlete documents for private race participants
     const raceStartList = [];
@@ -880,7 +949,7 @@ exports.updatePrivateRace = async (req, res) => {
     if (name) race.name = name.trim();
     if (date) {
       race.date = new Date(date);
-      race.lockTime = new Date(new Date(date).getTime() - 24 * 60 * 60 * 1000);
+      race.lockTime = new Date(new Date(date));
     }
     if (location !== undefined) race.location = location;
     if (notes !== undefined) race.notes = notes || '';
@@ -909,6 +978,70 @@ exports.updatePrivateRace = async (req, res) => {
     res.json(race);
   } catch (err) {
     console.error('Update private race error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+exports.submitPrivateRaceResults = async (req, res) => {
+  try {
+    const race = await Race.findById(req.params.id);
+    if (!race) return res.status(404).json({ error: 'Race not found' });
+    if (!race.isPrivate) return res.status(400).json({ error: 'This endpoint is only for private races' });
+
+    // Only creator can submit results
+    const userId = req.user?.userId || req.user?._id;
+    if (String(race.createdBy) !== String(userId)) {
+      return res.status(403).json({ error: 'Only the race creator can enter results' });
+    }
+
+    const { results: inputResults, sideBetResults } = req.body;
+
+    if (!Array.isArray(inputResults) || inputResults.length === 0) {
+      return res.status(400).json({ error: 'Results must be a non-empty array' });
+    }
+
+    // Build results with placement based on order/time
+    const processedResults = inputResults.map((r, index) => ({
+      athlete: r.athlete,
+      athleteName: r.athlete,
+      place: r.dnf ? null : index + 1,
+      totalTimeSeconds: r.totalTimeSeconds || 0,
+      swimTimeSeconds: r.swimTimeSeconds || 0,
+      bikeTimeSeconds: r.bikeTimeSeconds || 0,
+      runTimeSeconds: r.runTimeSeconds || 0,
+      status: r.dnf ? 'DNF' : 'Finished',
+      dnf: r.dnf || false
+    }));
+
+    // Sort non-DNF by totalTime, then append DNFs
+    const finished = processedResults.filter(r => !r.dnf).sort((a, b) => a.totalTimeSeconds - b.totalTimeSeconds);
+    const dnfs = processedResults.filter(r => r.dnf);
+    const sorted = [...finished.map((r, i) => ({ ...r, place: i + 1 })), ...dnfs];
+
+    // Handle side bet results
+    let updatedSideBets = race.sideBetsConfig || [];
+    if (sideBetResults && Array.isArray(sideBetResults)) {
+      updatedSideBets = updatedSideBets.map(bet => {
+        const answer = sideBetResults.find(s => s.key === bet.key);
+        if (answer) {
+          return { ...bet.toObject ? bet.toObject() : bet, result: answer.result, resolved: true };
+        }
+        return bet.toObject ? bet.toObject() : bet;
+      });
+    }
+
+    await Race.findByIdAndUpdate(req.params.id, {
+      $set: {
+        results: sorted,
+        sideBetsConfig: updatedSideBets,
+        status: 'Finished and Scored',
+        dnfCount: dnfs.length
+      }
+    });
+
+    res.json({ message: 'Results submitted successfully', results: sorted });
+  } catch (err) {
+    console.error('Submit private race results error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 };

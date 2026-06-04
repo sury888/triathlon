@@ -14,7 +14,7 @@ export default function CreatePrivateRace({ editMode = false }) {
   const [name, setName] = useState('')
   const [location, setLocation] = useState('')
   const [date, setDate] = useState('')
-  const [time, setTime] = useState('00:00')
+  //const [time, setTime] = useState('00:00')
   const [athletes, setAthletes] = useState([{ name: '', country: '' }])
   const [genderMode, setGenderMode] = useState('combined')
   const [sideBets, setSideBets] = useState([])
@@ -33,7 +33,7 @@ export default function CreatePrivateRace({ editMode = false }) {
         if (data.date) {
           const d = new Date(data.date)
           setDate(d.toISOString().split('T')[0])
-          setTime(d.toISOString().split('T')[1]?.slice(0, 5) || '00:00')
+          //setTime(d.toISOString().split('T')[1]?.slice(0, 5) || '00:00')
         }
         setRaceNotes(data.notes || '')
         if (data.startList && data.startList.length > 0) {
@@ -90,7 +90,7 @@ export default function CreatePrivateRace({ editMode = false }) {
     if (!name.trim()) return setError('Race name is required')
     if (!date) return setError('Race date is required')
 
-    const raceDateTime = new Date(`${date}T${time || '00:00'}:00Z`)
+    const raceDateTime = new Date(`${date}T00:00:00`)
     if (!isEdit && raceDateTime <= new Date()) return setError('Race date must be in the future')
 
     const validAthletes = athletes.filter(a => a.name.trim())
@@ -102,7 +102,7 @@ export default function CreatePrivateRace({ editMode = false }) {
         .filter(s => s.prompt.trim())
         .map((s, i) => ({ key: `custom_${i}`, prompt: s.type === 'over_under' && s.line ? `${s.prompt} (line: ${s.line})` : s.prompt, type: s.type, difficulty: s.difficulty, line: s.type === 'over_under' ? s.line : undefined }))
 
-      const raceDate = `${date}T${time || '00:00'}:00Z`
+      const raceDate = new Date(`${date}T00:00:00`).toISOString()
       const payload = {
         name: name.trim(),
         date: raceDate,
@@ -194,16 +194,7 @@ export default function CreatePrivateRace({ editMode = false }) {
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-[#6B7280] mb-1">Race Time (UTC)</label>
-                <input
-                  type="time"
-                  value={time}
-                  onChange={e => setTime(e.target.value)}
-                  className="input-field"
-                />
-                <p className="text-xs text-[#9CA3AF] mt-1">{time ? `${time} UTC` : '00:00 AM UTC (midnight)'}</p>
-              </div>
+            
               <div>
                 <label className="block text-sm font-medium text-[#6B7280] mb-1">Gender Scoring</label>
                 <select

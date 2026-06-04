@@ -144,7 +144,11 @@ export default function Races() {
   }, [authLoading, user, location.key])
 
   const filtered = useMemo(() => {
-    let list = races
+    let list = races.filter (r => {
+      if (!r.isPrivate) return true
+      if (!user) return false
+      return String(r.createdBy) == String(user._id) || (r.allowedUsers || []).includes(String(user._id))
+    })
     if (filter === 'upcoming') list = list.filter(r => ['Open', 'Upcoming'].includes(r.status))
     else if (filter === 'finished') list = list.filter(r => r.status === 'Finished and Scored')
     else if (filter === 'current') list = list.filter(r => r.status === 'Closed')

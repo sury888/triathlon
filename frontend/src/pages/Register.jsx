@@ -62,6 +62,8 @@ export default function Register() {
     setLoading(true)
     try {
       await register(form.name, form.email, form.password, form.confirmPassword)
+      // localStorage.setItem('token', res.data.token);
+      // localStorage.setItem('user', JSON.stringify(red.data.user));
       navigate('/dashboard', { state: { registered: true } })
     } catch (err) {
       const msg = err.response?.data?.error || err.response?.data?.details?.[0] || err.response?.data?.message
