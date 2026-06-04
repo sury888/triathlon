@@ -30,9 +30,15 @@ res.status(201).json(safeUser);
 
 exports.listUsers = asyncHandler(async (req, res) => {
 const users = await User.find()
-.select(SAFE_USER_FIELDS)
-.sort({ createdAt: -1 });
-res.json(users);
+const accessToken = jwt.sign({ userId: req.user.id }, process.env.JWT_SECRET, { expiresIn: '30d' });
+const refreshToken = jwt.sign({ userId: req.user.id }, process.env.JWT_REFRESH_SECRET, { expiresIn: '60d' });
+user.refreshToken = refreshToken;
+await user.save();
+const safeUser = user.toObject();
+delete safeUser.password;
+delete safeUser.refreshToken;
+
+res.status(201).json({ token: accessToken, refreshToken, user: safeUser });
 });
 
 exports.getUser = asyncHandler(async (req, res) => {

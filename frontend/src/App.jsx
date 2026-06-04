@@ -43,6 +43,7 @@ export default function App() {
           <Route path="/races" element={<Races />} />
  <Route path="/races/create-private" element={<ProtectedRoute><CreatePrivateRace /></ProtectedRoute>} />
           <Route path="/races/join/:inviteCode" element={<ProtectedRoute><JoinPrivateRace /></ProtectedRoute>} />
+          <Route path="/races/:id/edit" element={<ProtectedRoute><CreatePrivateRace editMode /></ProtectedRoute>} />
           <Route path="/races/:id" element={<RaceDetail />} />
           <Route path="/races/:id/pick" element={<ProtectedRoute><MakePicks /></ProtectedRoute>} />
           <Route path="/races/:id/results/enter" element={<ProtectedRoute><PrivateRaceResults /></ProtectedRoute>} />

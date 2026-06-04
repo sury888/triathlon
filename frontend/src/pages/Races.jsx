@@ -54,7 +54,8 @@ function groupByEvent(raceList) {
   return Object.values(map)
 }
 
-function GenderBadges({ genders }) {
+function GenderBadges({ genders, isPrivate }) {
+  if (isPrivate) return null
   if (genders.length === 2) {
     return <span className="text-sm px-2 py-0.5 rounded bg-[rgba(245,243,238,0.6)] text-[#6B7280]">Men & Women</span>
   }
@@ -309,7 +310,7 @@ export default function Races() {
                             <div className="flex items-center gap-2 sm:gap-3 mb-1 flex-wrap">
                               <span className="font-semibold">{event.eventName}</span>
                               <span className="text-xs px-2.5 py-0.5 rounded font-medium whitespace-nowrap" style={seriesStyle}>{displaySeries}</span>
-                              <GenderBadges genders={event.genders} />
+                              <GenderBadges genders={event.genders} isPrivate={event.isPrivate} />
                               {event.isPrivate && <span className="text-xs px-2 py-0.5 rounded-full border border-[#D0A242]/20 bg-[rgba(208,162,66,0.08)] text-[#D0A242] whitespace-nowrap font-medium">Private</span>}
                               {getPickStatus(event) !== null && <PickStatusBadge status={getPickStatus(event)} />}
                             </div>
@@ -368,7 +369,7 @@ export default function Races() {
                           <div className="flex items-center gap-2 sm:gap-3 mb-1 flex-wrap">
                             <span className="font-semibold">{event.eventName}</span>
                             <span className="text-xs px-2.5 py-0.5 rounded font-medium whitespace-nowrap" style={seriesStyle}>{displaySeriesL}</span>
-                            <GenderBadges genders={event.genders} />
+                            <GenderBadges genders={event.genders} isPrivate={event.isPrivate} />
                           </div>
                           <div className="flex items-center gap-3 text-sm text-[#9CA3AF]">
                             <span>{event.location}</span>
@@ -407,7 +408,7 @@ export default function Races() {
                           <div className="flex items-center gap-2 sm:gap-3 mb-1 flex-wrap">
                             <span className="font-semibold">{event.eventName}</span>
                             <span className="text-xs px-2.5 py-0.5 rounded font-medium whitespace-nowrap" style={seriesStyle}>{displaySeries2}</span>
-                            <GenderBadges genders={event.genders} />
+                            <GenderBadges genders={event.genders} isPrivate={event.isPrivate}/>
                           </div>
                           <div className="flex items-center gap-3 text-xs text-[#9CA3AF]">
                             <span>{event.location}</span>

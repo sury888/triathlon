@@ -1,13 +1,15 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import api from '../utils/api'
 import PageMeta from '../components/PageMeta'
 import ErrorAlert from '../components/ErrorAlert'
 
-export default function CreatePrivateRace() {
+export default function CreatePrivateRace({ editMode = false }) {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const { id: raceId } = useParams()
+  const isEdit = editMode && !!raceId
 
   const [name, setName] = useState('')
   const [location, setLocation] = useState('')
@@ -15,14 +17,50 @@ export default function CreatePrivateRace() {
   const [time, setTime] = useState('00:00')
   const [athletes, setAthletes] = useState([{ name: '', country: '' }])
   const [genderMode, setGenderMode] = useState('combined')
-  const [inviteEmails, setInviteEmails] = useState('')
   const [sideBets, setSideBets] = useState([])
   const [raceNotes, setRaceNotes] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [fetching, setFetching] = useState(isEdit)
 
+  useEffect(() => {
+    if (!isEdit) return
+    async function fetchRace() {
+      try {
+        const { data } = await api.get(`/races/${raceId}`)
+        setName(data.name || '')
+        setLocation(data.location || '')
+        if (data.date) {
+          const d = new Date(data.date)
+          setDate(d.toISOString().split('T')[0])
+          setTime(d.toISOString().split('T')[1]?.slice(0, 5) || '00:00')
+        }
+        setRaceNotes(data.notes || '')
+        if (data.startList && data.startList.length > 0) {
+          setAthletes(data.startList.map(a => ({
+            name: a.athleteName || a.name || '',
+            country: a.country || '',
+            gender: a.gender || 'M'
+          })))
+        }
+        if (data.sideBetsConfig && data.sideBetsConfig.length > 0) {
+          setSideBets(data.sideBetsConfig.map(b => ({
+            prompt: b.prompt || '',
+            type: b.type || 'boolean',
+            difficulty: b.difficulty || 'easy',
+            line: b.line || ''
+          })))
+        }
+      } catch (err) {
+        setError('Failed to load race')
+      } finally {
+        setFetching(false)
+      }
+    }
+    fetchRace()
+  }, [isEdit, raceId])
 
-  const addAthlete = () => setAthletes([...athletes, { name: '', gender: 'M', country: '' }])
+  const addAthlete = () => setAthletes([...athletes, { name: '', gender: genderMode === 'combined' ? 'A' : 'M', country: '' }])
 
   const removeAthlete = (i) => {
     if (athletes.length <= 1) return
@@ -53,7 +91,7 @@ export default function CreatePrivateRace() {
     if (!date) return setError('Race date is required')
 
     const raceDateTime = new Date(`${date}T${time || '00:00'}:00Z`)
-    if (raceDateTime <= new Date()) return setError('Race date must be in the future')
+    if (!isEdit && raceDateTime <= new Date()) return setError('Race date must be in the future')
 
     const validAthletes = athletes.filter(a => a.name.trim())
     if (validAthletes.length < 2) return setError('At least 2 athletes are required')
@@ -65,47 +103,49 @@ export default function CreatePrivateRace() {
         .map((s, i) => ({ key: `custom_${i}`, prompt: s.type === 'over_under' && s.line ? `${s.prompt} (line: ${s.line})` : s.prompt, type: s.type, difficulty: s.difficulty, line: s.type === 'over_under' ? s.line : undefined }))
 
       const raceDate = `${date}T${time || '00:00'}:00Z`
-      const { data } = await api.post('/races/private', {
+      const payload = {
         name: name.trim(),
         date: raceDate,
         location: location.trim() || undefined,
         genderMode,
         startList: validAthletes.map(a => ({
           name: a.name.trim(),
-          gender: genderMode === a.gender || 'M',
+          gender: genderMode === 'combined' ? 'A' : (a.gender || 'M'),
           country: a.country?.trim() || undefined
         })),
         sideBetsConfig: validSideBets,
         notes: raceNotes.trim() || undefined
-      })
-
-      // Invite emails if provided
-      const emails = inviteEmails.split(/[,;\s]+/).map(e => e.trim()).filter(e => e.includes('@'))
-      if (emails.length > 0) {
-        await api.post(`/races/${data._id}/invite`, { emails })
       }
 
-      navigate(`/races/${data._id}/pick`, { state: { inviteCode: data.inviteCode, raceName: data.name } })
+      if (isEdit) {
+        await api.put(`/races/${raceId}/private`, payload)
+        navigate(`/races/${raceId}`)
+      } else {
+        const { data } = await api.post('/races/private', payload)
+        navigate(`/races/${data._id}/pick`, { state: { inviteCode: data.inviteCode, raceName: data.name } })
+      }
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to create race')
+      setError(err.response?.data?.error || (isEdit ? 'Failed to update race' : 'Failed to create race'))
     } finally {
       setLoading(false)
     }
   }
 
+  if (fetching) return <div className="flex justify-center py-20"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#D0A242]"></div></div>
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
-      <PageMeta title="Create Private Race" description="Create a private race for you and your friends" />
+      <PageMeta title={isEdit ? 'Edit Private Race' : 'Create Private Race'} description={isEdit ? 'Edit your private race' : 'Create a private race for you and your friends'} />
 
       <div className="mb-6 flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-[#D0A242]">Create Private Race</h1>
-          <p className="text-[#9CA3AF] mt-1">Set up a race for you and your friends — only invited users can see it</p>
+          <h1 className="text-2xl font-bold text-[#D0A242]">{isEdit ? 'Edit Private Race' : 'Create Private Race'}</h1>
+          <p className="text-[#9CA3AF] mt-1">{isEdit ? 'Update your race details' : 'Set up a race for you and your friends — only invited users can see it'}</p>
         </div>
         <button
           type="button"
-          onClick={() => navigate('/races')}
-          aria-label="Cancel and return to races"
+          onClick={() => isEdit ? navigate(`/races/${raceId}`) : navigate('/races')}
+          aria-label="Cancel and go back"
           className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-lg bg-[rgba(216,221,223,0.45)] hover:bg-[#E8E3DA] text-[#9CA3AF] hover:text-[#1F2937] transition-colors"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -147,7 +187,7 @@ export default function CreatePrivateRace() {
                   type="date"
                   value={date}
                   onChange={e => setDate(e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
+                  min={isEdit ? undefined : new Date().toISOString().split('T')[0]}
                   className="input-field"
                   required
                 />
@@ -190,7 +230,7 @@ export default function CreatePrivateRace() {
               Add Athlete
             </button>
           </div>
-          <p className="text-[#9CA3AF] text-sm mb-4">Add your friends / amateur athletes competing in this race. No special characters allowed.</p>
+          <p className="text-[#9CA3AF] text-sm mb-4">Add your friends / amateur athletes competing in this race</p>
           <div className="space-y-3">
             {athletes.map((a, i) => (
               <div key={i} className="flex items-center gap-2">
@@ -312,24 +352,8 @@ export default function CreatePrivateRace() {
           />
         </div>
 
-        {/* Invite Friends */}
-        <div className="card">
-          <h3 className="text-lg font-semibold text-[#D0A242] mb-4">Invite Friends</h3>
-          <p className="text-[#9CA3AF] text-sm mb-3">
-            Enter email addresses of friends to invite (they'll also get an invite code to join).
-            You can invite more people after creating the race too.
-          </p>
-          <textarea
-            value={inviteEmails}
-            onChange={e => setInviteEmails(e.target.value)}
-            className="input-field"
-            rows={3}
-            placeholder="friend1@email.com, friend2@email.com, ..."
-          />
-        </div>
-
         <button type="submit" className="btn-primary w-full text-lg py-3" disabled={loading}>
-          {loading ? 'Creating Race...' : 'Create Private Race'}
+          {loading ? (isEdit ? 'Saving Changes...' : 'Creating Race...') : (isEdit ? 'Save Changes' : 'Create Private Race')}
         </button>
       </form>
     </div>

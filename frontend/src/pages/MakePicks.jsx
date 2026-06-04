@@ -567,6 +567,10 @@ const allComplete = Object.keys(stateToSave).every(g => {
 const gs = stateToSave[g]
 const raceForGender = getRaceForGender(g)
 if (!raceForGender?.startList?.length) return true
+const fieldSize = raceForGender.startList.length
+const requiredPicks = Math.min(5, fieldSize)
+const filledSlots = gs.slots.filter(s => s !== null).length
+if (race?.isPrivate) return filledSlots >= requiredPicks
 return gs.slots.every(s => s !== null) && gs.splits.swim && gs.splits.bike && gs.splits.run
 })
 setSaveStatus(allComplete ? 'submitted' : 'saved')

@@ -820,7 +820,8 @@ exports.createPrivateRace = async (req, res) => {
       createdBy: userId,
       allowedUsers: [userId],
       inviteCode,
-      notes: notes || null
+      notes: notes || '', 
+      results: [] 
     });
 
     res.status(201).json(race);
@@ -861,6 +862,53 @@ exports.joinPrivateRace = async (req, res) => {
     res.json({ message: 'Joined private race', race: { _id: race._id, name: race.name } });
   } catch (err) {
     console.error('Join race error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+exports.updatePrivateRace = async (req, res) => {
+  try {
+    const race = await Race.findById(req.params.id);
+    if (!race) return res.status(404).json({ error: 'Race not found' });
+    if (!race.isPrivate) return res.status(400).json({ error: 'Race is not private' });
+    if (String(race.createdBy) !== String(req.user._id || req.user.userId)) {
+      return res.status(403).json({ error: 'Only the race creator can edit this race' });
+    }
+
+    const { name, date, location, notes, startList, sideBetsConfig, genderMode } = req.body;
+
+    if (name) race.name = name.trim();
+    if (date) {
+      race.date = new Date(date);
+      race.lockTime = new Date(new Date(date).getTime() - 24 * 60 * 60 * 1000);
+    }
+    if (location !== undefined) race.location = location;
+    if (notes !== undefined) race.notes = notes || '';
+
+    if (startList && startList.length > 0) {
+      race.startList = startList.map((a, i) => ({
+        athlete: race.startList[i]?.athlete || new require('mongoose').Types.ObjectId(),
+        startRank: i + 1,
+        athleteName: a.name,
+        name: a.name,
+        country: a.country || '',
+        gender: a.gender || 'M'
+      }));
+    }
+
+    if (sideBetsConfig) {
+      race.sideBetsConfig = sideBetsConfig.map(b => ({
+        ...b,
+        points: b.difficulty === 'hard' ? 15 : b.difficulty === 'medium' ? 10 : 5,
+        resolved: false,
+        result: null
+      }));
+    }
+
+    await race.save();
+    res.json(race);
+  } catch (err) {
+    console.error('Update private race error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 };

@@ -21,6 +21,7 @@ router.get('/:id', race.getRaceById);
 
 
 router.post('/deleteRaceScoresByRace', authMiddleware, adminOnly, race.deleteRaceScoresByRace);
+router.post('/private', authMiddleware, race.createPrivateRace);
 router.post('/', authMiddleware, adminOnly, race.createRaces);
 
 router.post('/:id/processResults', authMiddleware, adminOnly, race.processResults);
@@ -33,6 +34,7 @@ router.post('/:id/invite', authMiddleware, race.inviteToRace);
 
 //{any updatable fields}
 //token jawn?
+router.put('/:id/private', authMiddleware, race.updatePrivateRace);
 router.put('/:id', authMiddleware, adminOnly, race.updateRace);
 
 router.put('/:id/startlist', authMiddleware, adminOnly, race.updateStartList);
