@@ -501,11 +501,13 @@ for (const g of genders) {
 const gs = genderState[g]
 const raceForGender = getRaceForGender(g)
 if (!gs || !raceForGender || !raceForGender.startList?.length) continue
-const label = g === 'M' ? "Men's" : "Women's"
+const label = race?.isPrivate ? 'Race' : (g === 'M' ? "Men's" : "Women's")
+const fieldSize = raceForGender.startList?.length || 0
+const requiredPicks = Math.min(5, fieldSize)
 
 const filledSlots = gs.slots.filter(s => s !== null)
-if (filledSlots.length < 5) {
-errors.push(`${label}: Pick 5 athletes (you have ${filledSlots.length})`)
+if (filledSlots.length < requiredPicks) {
+errors.push(`${label}: Pick ${requiredPicks} athletes (you have ${filledSlots.length})`)
 }
 
 const ids = filledSlots.map(s => s.athlete?._id || s.athlete)
@@ -766,11 +768,11 @@ const hasSelectedForGender = selectedAthlete?.gender === gender
 return (
 <div className="flex flex-col min-h-0">
 <h3 className={`text-sm font-bold mb-2 ${genderColor}`}>
-{gender === 'M' ? "Men's" : "Women's"} Picks
+    {race?.isPrivate ? 'Race' : (gender === 'M' ? "Men's" : "Women's")} Picks
 </h3>
 
 <div className="space-y-1.5 mb-3">
-{[0, 1, 2, 3, 4].map(i => (
+{[0, 1, 2, 3, 4].filter(i => i < fieldSize).map(i => (
 <PlacementSlot
 key={i}
 place={i + 1}
@@ -932,7 +934,7 @@ Hard = <span className="text-[#E11D48]">+5 pts</span>.
 {/* === DESKTOP 4-COLUMN LAYOUT === */}
 <div className="hidden lg:grid lg:grid-cols-[3fr_2fr_2fr_3fr] gap-3 mb-4">
 <div className="card p-2">
-{renderAthleteColumn('M', "Men's Field", 'text-[#22D3EE]')}
+{renderAthleteColumn('M', race?.isPrivate ? "Race Field" : "Men's Field", 'text-[#22D3EE]')}
 </div>
 <div className="card p-2">
 {renderPicksColumn('M', 'text-[#22D3EE]')}
@@ -941,7 +943,7 @@ Hard = <span className="text-[#E11D48]">+5 pts</span>.
 {renderPicksColumn('F', 'text-[#E11D48]')}
 </div>
 <div className="card p-2">
-{renderAthleteColumn('F', "Women's Field", 'text-[#E11D48]')}
+{renderAthleteColumn('F', race?.isPrivate ? "Race Field" : "Women's Field", 'text-[#E11D48]')}
 </div>
 </div>
 
@@ -967,7 +969,7 @@ mobileGenderTab === g
 {genders.map(g => {
 if (genders.length > 1 && g !== mobileGenderTab) return null
 const genderColor = g === 'M' ? 'text-[#22D3EE]' : 'text-[#E11D48]'
-const label = g === 'M' ? "Men's Field" : "Women's Field"
+const label = race?.isPrivate ? "Race Field" : (g === 'M' ? "Men's Field" : "Women's Field")
 return (
 <div key={g} className="space-y-3">
 <div ref={mobilePicksRef} className="card p-2">
@@ -1044,14 +1046,15 @@ placeholder="Your answer"
 {genders.map(g => {
 const gs = genderState[g]
 if (!gs) return null
-const label = g === 'M' ? "Men's" : "Women's"
+const label = race?.isPrivate ? "Race Field" : (g === 'M' ? "Men's" : "Women's")
 const genderColor = g === 'M' ? 'text-[#22D3EE]' : 'text-[#E11D48]'
 return (
 <div key={g} className="card p-3">
 <h3 className={`text-xs font-bold mb-2 ${genderColor}`}>{label} Summary</h3>
 <div className="text-xs text-[#9CA3AF] mb-2">
-<span className={gs.slots.filter(s => s).length === 5 ? 'text-[#D0A242]' : ''}>
-{gs.slots.filter(s => s).length}/5 placed
+
+<span className={gs.slots.filter(s => s).length >= Math.min(5, (getRaceForGender(g)?.startList?.length || 5)) ? 'text-[#D0A242]' : ''}>
+{gs.slots.filter(s => s).length} / {Math.min(5, (getRaceForGender(g)?.startList?.length || 5))} placed
 </span>
 {' | '}
 <span className={gs.underdogIndex >= 0 ? 'text-[#D0A242]' : 'text-[#D0A242]'}>

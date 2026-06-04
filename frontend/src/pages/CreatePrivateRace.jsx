@@ -190,7 +190,7 @@ export default function CreatePrivateRace() {
               Add Athlete
             </button>
           </div>
-          <p className="text-[#9CA3AF] text-sm mb-4">Add your friends / amateur athletes competing in this race</p>
+          <p className="text-[#9CA3AF] text-sm mb-4">Add your friends / amateur athletes competing in this race. No special characters allowed.</p>
           <div className="space-y-3">
             {athletes.map((a, i) => (
               <div key={i} className="flex items-center gap-2">

@@ -859,6 +859,12 @@ export default function RaceDetail() {
       </div>
 
       <GenderTabs activeGender={activeGender} setActiveGender={setActiveGender} genders={genders} />
+      {race.notes && (
+        <div className ="card mb-6 p-4">
+          <h2 className="text-sm font-bold text-[#D0A242] mb-2"> Race Notes</h2>
+          <p className="text-sm text-[#6B7280] whitespace-pre-wrap">{race.notes}</p>
+        </div>
+      )}
 
       {/* Race Info - card countdown style for non-finished races */}
       {!hasResults && (
