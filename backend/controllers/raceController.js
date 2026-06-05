@@ -15,6 +15,7 @@ recalculateAllScores
 } = require('../utils/scoring');
 
 exports.getRaces = async (req, res) => {
+  
 try {
 const { series, status, page = 1, limit = 50 } = req.query;
 //const filter = {isPrivate: { $ne: true }};
@@ -32,7 +33,7 @@ Race.find(filter)
 .sort({ lockTime: 1 })
 .skip(skip)
 .limit(limitNum)
-.select('name location lockTime status startList results gender series date isPrivate createdBy eventSlug eventName notes allowedUsers'),
+.select('name location lockTime status startList results gender series date isPrivate createdBy eventSlug eventName notes allowedUsers inviteCode'),
 Race.countDocuments(filter)
 ]);
 
@@ -51,6 +52,7 @@ const formatted = races.map(r => {
   gender: r.gender,
   isPrivate: r.isPrivate,
   createdBy: r.createdBy,
+  inviteCode: r.inviteCode,
   //eventSlug: r.eventSlug || r._id.toString(),
   //eventName: r.eventName || r.name,
   notes: r.notes,
@@ -68,30 +70,25 @@ res.status(500).json({ error: 'Server error', details: err.message });
 };
 
 exports.getRaceById = async (req, res) => {
+  console.log("HIT GET RACE BY ID", req.params.id)
+
   try {
     const race = await Race.findById(req.params.id)
+      .select('+inviteCode')
       .populate('startList.athlete', 'name gender country ptoRanking wtsRanking swimRanking bikeRanking runRanking podiumPct winPct profilePicture')
       .populate('results', 'athlete place totalTime status penalties');
 
     if (!race) return res.status(404).json({ error: 'Race not found' });
 
-    if (race.isPrivate){
-      const token = req.headers.authorization?.split(' ')[1];
-      let userId = null;
-      if (token) {
-        try {
-          const jwt = require('jsonwebtoken');
-          const decoded = jwt.verify(token, process.env.JWT_SECRET);
-          userId = decoded.userId;
-        } catch {}
-    }
-    if (!userId || (String(race.createdBy) !== String(userId) && !race.allowedUsers.some(u => String(u) === String(userId)))) {
-      return res.status(403).json({ error: 'Unauthorized' });
-    }}
+    // ❌ REMOVE THIS BLOCK:
+    // if (race.isPrivate) { ... unauthorized ... }
 
-    // Find sibling race (same location + season, opposite gender)
+    // Instead, allow public read access:
+    // Only restrict picks, editing, entering results, etc.
+
+    // Sibling lookup
     const oppositeGender = race.gender === 'M' ? 'F' : 'M';
-    
+
     const sibling = await Race.findOne({
       _id: { $ne: race._id },
       gender: oppositeGender,
@@ -99,9 +96,6 @@ exports.getRaceById = async (req, res) => {
       series: race.series,
       location: race.location
     }).select('_id name gender');
-
-    console.log('Sibling lookup for', race.name, ':', sibling ? sibling.name : 'NOT FOUND');
-    console.log('  Query: gender=', oppositeGender, 'season=', race.season, 'series=', race.series, 'location=', race.location);
 
     const raceObj = race.toObject();
     if (sibling) {

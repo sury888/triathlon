@@ -2,46 +2,113 @@ const router = require('express').Router();
 const race = require('../controllers/raceController');
 const { authMiddleware, adminOnly } = require('../middleware/auth');
 
-// RACES
-router.get('/', race.getRaces);
+/* -----------------------------
+   SPECIFIC ROUTES FIRST
+------------------------------ */
 
-//{name, location, date, series, gender} + plus any more
-//didn't test yet
+// Create private race
+router.post('/private', authMiddleware, (req, res, next) => {
+  console.log("HIT ROUTE: POST /private");
+  next();
+}, race.createPrivateRace);
 
-router.get('/upcoming', race.getUpcomingRaces);
-router.get('/finished', race.getFinishedRaces);
-router.get('/current', race.getCurrentRaces);
-router.get('/recalculate', authMiddleware, adminOnly, race.recalculateAllScores); 
-router.get('/scored', race.getScoredRaces);
-router.post('/private', authMiddleware, race.createPrivateRace);
-router.post('/join/:inviteCode', authMiddleware, race.joinPrivateRace);
+// Join private race
+router.post('/join/:inviteCode', authMiddleware, (req, res, next) => {
+  console.log("HIT ROUTE: POST /join/:inviteCode", req.params.inviteCode);
+  next();
+}, race.joinPrivateRace);
 
-router.get('/:id', race.getRaceById);
+// Process results
+router.post('/:id/processResults', authMiddleware, adminOnly, (req, res, next) => {
+  console.log("HIT ROUTE: POST /:id/processResults", req.params.id);
+  next();
+}, race.processResults);
+
+// Side bets
+router.post('/:id/setSideBets', authMiddleware, adminOnly, (req, res, next) => {
+  console.log("HIT ROUTE: POST /:id/setSideBets", req.params.id);
+  next();
+}, race.setSideBetsConfig);
+
+router.post('/:id/scoreSideBets', authMiddleware, adminOnly, (req, res, next) => {
+  console.log("HIT ROUTE: POST /:id/scoreSideBets", req.params.id);
+  next();
+}, race.setSideBetsResults);
+
+// Invite users
+router.post('/:id/invite', authMiddleware, (req, res, next) => {
+  console.log("HIT ROUTE: POST /:id/invite", req.params.id);
+  next();
+}, race.inviteToRace);
+
+// Submit private race results
+router.post('/:id/results', authMiddleware, (req, res, next) => {
+  console.log("HIT ROUTE: POST /:id/results", req.params.id);
+  next();
+}, race.submitPrivateRaceResults);
+
+// Update private race
+router.put('/:id/private', authMiddleware, (req, res, next) => {
+  console.log("HIT ROUTE: PUT /:id/private", req.params.id);
+  next();
+}, race.updatePrivateRace);
+
+// Update start list
+router.put('/:id/startlist', authMiddleware, adminOnly, (req, res, next) => {
+  console.log("HIT ROUTE: PUT /:id/startlist", req.params.id);
+  next();
+}, race.updateStartList);
+
+// Update race
+router.put('/:id', authMiddleware, adminOnly, (req, res, next) => {
+  console.log("HIT ROUTE: PUT /:id", req.params.id);
+  next();
+}, race.updateRace);
 
 
+/* -----------------------------
+   GET BY ID BEFORE LIST ROUTES
+------------------------------ */
 
-router.post('/deleteRaceScoresByRace', authMiddleware, adminOnly, race.deleteRaceScoresByRace);
-router.post('/private', authMiddleware, race.createPrivateRace);
-router.post('/', authMiddleware, adminOnly, race.createRaces);
-
-router.post('/:id/processResults', authMiddleware, adminOnly, race.processResults);
-router.post('/:id/setSideBets', authMiddleware, adminOnly, race.setSideBetsConfig);
-router.post('/:id/scoreSideBets', authMiddleware, adminOnly, race.setSideBetsResults);
-router.post('/:id/invite', authMiddleware, race.inviteToRace);
-
+router.get('/:id', (req, res, next) => {
+  console.log("HIT ROUTE: GET /:id", req.params.id);
+  next();
+}, race.getRaceById);
 
 
+/* -----------------------------
+   LIST ROUTES LAST
+------------------------------ */
 
-//{any updatable fields}
-//token jawn?
-router.put('/:id/private', authMiddleware, race.updatePrivateRace);
-router.put('/:id', authMiddleware, adminOnly, race.updateRace);
+router.get('/upcoming', (req, res, next) => {
+  console.log("HIT ROUTE: GET /upcoming");
+  next();
+}, race.getUpcomingRaces);
 
-router.put('/:id/startlist', authMiddleware, adminOnly, race.updateStartList);
-router.post('/:id/results', authMiddleware, race.submitPrivateRaceResults);
+router.get('/finished', (req, res, next) => {
+  console.log("HIT ROUTE: GET /finished");
+  next();
+}, race.getFinishedRaces);
 
+router.get('/current', (req, res, next) => {
+  console.log("HIT ROUTE: GET /current");
+  next();
+}, race.getCurrentRaces);
 
+router.get('/recalculate', authMiddleware, adminOnly, (req, res, next) => {
+  console.log("HIT ROUTE: GET /recalculate");
+  next();
+}, race.recalculateAllScores);
 
-// router.post('/:id/processResults', authMiddleware, race.processResults);
+router.get('/scored', (req, res, next) => {
+  console.log("HIT ROUTE: GET /scored");
+  next();
+}, race.getScoredRaces);
+
+// GET ALL — MUST BE LAST
+router.get('/', (req, res, next) => {
+  console.log("HIT ROUTE: GET /");
+  next();
+}, race.getRaces);
 
 module.exports = router;

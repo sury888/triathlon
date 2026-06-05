@@ -143,8 +143,7 @@ type: mongoose.Schema.Types.ObjectId,
 ref: 'User'
 }],
 inviteCode: {
-type: String,
-default: null
+type: String
 }
 }, { timestamps: true });
 

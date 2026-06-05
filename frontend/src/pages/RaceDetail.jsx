@@ -713,10 +713,16 @@ export default function RaceDetail() {
         if (results[0].status === 'fulfilled') {
           const data = results[0].value.data
           const isOpen = data.status === 'Open' && new Date() < new Date(data.lockTime)
-          if (isOpen && data.startList?.length > 0 && user) {
-            navigate(`/races/${id}/pick`, { replace: true })
-            return
-          }
+
+        const userIsCreator = user && String(user._id) === String(data.createdBy)
+const userHasPicks = results[1]?.status === 'fulfilled' &&
+  results[1].value.data.some(p => p.race?._id === id)
+
+if (isOpen && !userIsCreator && !userHasPicks) {
+  navigate(`/races/${id}`, { replace: true })
+  return
+}
+
           setRace(data)
           setActiveGender(data.gender)
 
@@ -865,6 +871,46 @@ export default function RaceDetail() {
           )}
         </div>
       </div>
+
+     
+
+      {/* Invite Code — always visible to race creator for private races */}
+      {race.isPrivate && activeRace.inviteCode && (
+
+        <div className="card mb-6 p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <p className="text-xs text-[#9CA3AF] uppercase tracking-wider mb-1">Invite Code</p>
+              <p className="text-lg font-mono font-bold text-[#D0A242] select-all">{activeRace.inviteCode}</p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(race.inviteCode)
+                  alert('Invite code copied!')
+                }}
+                className="px-3 py-1.5 rounded-lg bg-[rgba(208,162,66,0.08)] border border-[#D0A242]/20 text-[#D0A242] text-sm font-medium hover:bg-[rgba(208,162,66,0.15)] transition-colors"
+              >
+                Copy Code
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const link = `${window.location.origin}/join/${race.inviteCode}`
+                  navigator.clipboard.writeText(link)
+                  alert('Invite link copied!')
+                }}
+                className="px-3 py-1.5 rounded-lg bg-[#D0A242] text-[#1F2937] text-sm font-medium hover:bg-[#C4963A] transition-colors"
+              >
+                Copy Invite Link
+              </button>
+            </div>
+          </div>
+          <p className="text-xs text-[#9CA3AF] mt-2">Share this code or link so friends can join your race.</p>
+        </div>
+      )}
+
 
       <GenderTabs activeGender={activeGender} setActiveGender={setActiveGender} genders={genders} />
       {race.notes && (
