@@ -97,7 +97,7 @@ export default function Races() {
       const { data } = await api.post(`/races/join/${trimmed}`)
       setShowJoinCode(false)
       setJoinCode('')
-      navigate(`/races/${data.race._id}`)
+      navigate(`/races/${data.race._id}/pick`)
     } catch {
       try {
         await api.post(`/leagues/join/${trimmed}`, { userId: user._id })

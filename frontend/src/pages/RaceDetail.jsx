@@ -719,7 +719,7 @@ const userHasPicks = results[1]?.status === 'fulfilled' &&
   results[1].value.data.some(p => p.race?._id === id)
 
 if (isOpen && !userIsCreator && !userHasPicks) {
-  navigate(`/races/${id}`, { replace: true })
+  navigate(`/races/${id}/pick`, { replace: true })
   return
 }
 
@@ -897,7 +897,7 @@ if (isOpen && !userIsCreator && !userHasPicks) {
               <button
                 type="button"
                 onClick={() => {
-                  const link = `${window.location.origin}/join/${race.inviteCode}`
+                  const link = `${window.location.origin}/races/join/${race.inviteCode}`
                   navigator.clipboard.writeText(link)
                   alert('Invite link copied!')
                 }}

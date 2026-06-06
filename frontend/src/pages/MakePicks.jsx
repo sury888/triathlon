@@ -214,7 +214,7 @@ const { id } = useParams()
 const { user } = useAuth()
 const navigate = useNavigate()
 const location = useLocation()
-const inviteCode = location.state?.inviteCode
+const inviteCodeFromState = location.state?.inviteCode
 const [inviteCopied, setInviteCopied] = useState(false)
 
 const [race, setRace] = useState(null)
@@ -877,28 +877,28 @@ Submit Picks
 </div>
 </div>
 </div>
-
-{inviteCode && (
-<div className="bg-[rgba(208,162,66,0.08)] border border-[#D0A242]/20 rounded-lg px-4 py-3 mt-3 flex items-center justify-between gap-3">
-<div className="flex items-center gap-3">
-<span className="text-[#D0A242] text-lg">&#128279;</span>
-<div>
-<p className="text-sm font-medium text-[#C4963A]">Share this invite code with your friends</p>
-<span className="text-xl font-mono font-bold text-[#D0A242] tracking-widest">{inviteCode}</span>
-</div>
-</div>
-<button
-onClick={() => {
-const link = `${window.location.origin}/races/${id}`
-navigator.clipboard.writeText(`Join my race! Code: ${inviteCode} — ${link}`)
-setInviteCopied(true)
-setTimeout(() => setInviteCopied(false), 2000)
-}}
-className="px-3 py-1.5 rounded-lg text-sm bg-[rgba(208,162,66,0.08)] text-[#C4963A] hover:bg-[#D0A242]/30 transition-colors whitespace-nowrap"
->
-{inviteCopied ? 'Copied!' : 'Copy Code + Link'}
-</button>
-</div>
+{(inviteCodeFromState || (race.isPrivate && race.inviteCode)) && (
+  <div className="bg-[rgba(208,162,66,0.08)] border border-[#D0A242]/20 rounded-lg px-4 py-3 mt-3 flex items-center justify-between gap-3">
+    <div className="flex items-center gap-3">
+      <span className="text-[#D0A242] text-lg">&#128279;</span>
+      <div>
+        <p className="text-sm font-medium text-[#C4963A]">Share this invite code with your friends</p>
+        <span className="text-xl font-mono font-bold text-[#D0A242] tracking-widest">{inviteCodeFromState || race.inviteCode}</span>
+      </div>
+    </div>
+    <button
+      onClick={() => {
+        const code = inviteCodeFromState || race.inviteCode
+        const link = `${window.location.origin}/races/join/${code}`
+        navigator.clipboard.writeText(`Join my race! Code: ${code} — ${link}`)
+        setInviteCopied(true)
+        setTimeout(() => setInviteCopied(false), 2000)
+      }}
+      className="px-3 py-1.5 rounded-lg text-sm bg-[rgba(208,162,66,0.08)] text-[#C4963A] hover:bg-[#D0A242]/30 transition-colors whitespace-nowrap"
+    >
+      {inviteCopied ? 'Copied!' : 'Copy Code + Link'}
+    </button>
+  </div>
 )}
 {
 race?.notes && (

@@ -417,33 +417,53 @@ console.error("Delete raceScoresByRace error:", err);
 res.status(500).json({ error: "Server error", details: err.message });
 }
 };
-
 exports.getFinishedRaces = async (req, res) => {
-try {
- let userId = null
-  const token = req.headers.authorization?.split(' ')[1]
-  if (token) {
-    try { const jwt = require('jsonwebtoken'); userId = jwt.verify(token, process.env.JWT_SECRET).userId} catch {}
-  }
-  const baseFilter = {lockTime: { $gte: new Date() }, status: "Finished and Scored"}
-  const races = await Race.find({
-    $and : [
-      baseFilter,
-      { $or: [
-        {isPrivate: { $ne:true } },
-        ...(userId ? [{...baseFilter, isPrivate: true, $or: [{createdBy: userId }, {allowedUsers: userId}] }] : [])
-      ]}
-    ]
-  })
-.sort({ lockTime: -1 })
-.limit(10)
-.populate('startList.athlete', 'name gender country ptoRanking swimRanking bikeRanking runRanking profilePicture');
+  try {
+    let userId = null;
+    const token = req.headers.authorization?.split(' ')[1];
+    if (token) {
+      try {
+        const jwt = require('jsonwebtoken');
+        userId = jwt.verify(token, process.env.JWT_SECRET).userId;
+      } catch {}
+    }
 
-res.json(races);
-} catch (err) {
-console.error("Finished races error:", err);
-res.status(500).json({ error: 'Server error' });
-}
+    const baseFilter = { 
+      lockTime: { $lte: new Date() },   // FIXED
+      status: "Finished and Scored" 
+    };
+
+    const races = await Race.find({
+      $and: [
+        baseFilter,
+        {
+          $or: [
+            { isPrivate: { $ne: true } },
+            ...(userId
+              ? [
+                  {
+                    ...baseFilter,
+                    isPrivate: true,
+                    $or: [{ createdBy: userId }, { allowedUsers: userId }]
+                  }
+                ]
+              : [])
+          ]
+        }
+      ]
+    })
+      .sort({ lockTime: -1 })
+      .limit(10)
+      .populate(
+        "startList.athlete",
+        "name gender country ptoRanking swimRanking bikeRanking runRanking profilePicture"
+      );
+
+    res.json(races);
+  } catch (err) {
+    console.error("Finished races error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
 };
 
 exports.getUpcomingRaces = async (req, res) => {
@@ -1037,5 +1057,38 @@ exports.submitPrivateRaceResults = async (req, res) => {
   } catch (err) {
     console.error('Submit private race results error:', err);
     res.status(500).json({ error: 'Server error' });
+  }
+};
+
+// Join a private race via invite code
+exports.joinRaceViaInvite = async (req, res) => {
+  try {
+    const { inviteCode } = req.params;
+    const userId = req.user.userId;
+
+    const race = await Race.findOne({ inviteCode, isPrivate: true });
+    if (!race) {
+      return res.status(404).json({ error: 'Race not found. The invite code may be invalid.' });
+    }
+
+    // Check if user is already in allowedUsers
+    const alreadyAllowed = race.allowedUsers.some(
+      id => id.toString() === userId
+    );
+
+    if (!alreadyAllowed) {
+      race.allowedUsers.push(userId);
+      await race.save();
+    }
+
+    // Return the race data so frontend can navigate
+    const populated = await Race.findById(race._id)
+      .populate('startList', 'name gender country ptoRank')
+      .populate('results', 'athlete place totalTime status penalties');
+
+    res.json({ race: populated });
+  } catch (err) {
+    console.error("Join race via invite error:", err);
+    res.status(500).json({ error: "Server error" });
   }
 };

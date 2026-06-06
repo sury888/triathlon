@@ -119,7 +119,7 @@ export default function CreatePrivateRace({ editMode = false }) {
 
       if (isEdit) {
         await api.put(`/races/${raceId}/private`, payload)
-        navigate(`/races/${raceId}`)
+        navigate(`/races/${raceId}/pick`)
       } else {
         const { data } = await api.post('/races/private', payload)
         navigate(`/races/${data._id}/pick`, { state: { inviteCode: data.inviteCode, raceName: data.name } })

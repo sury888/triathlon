@@ -52,7 +52,7 @@ export default function JoinPrivateRace() {
           </div>
           <h2 className="text-2xl font-bold text-[#D0A242] mb-2">You're in!</h2>
           <p className="text-[#9CA3AF] mb-6">You've joined <span className="text-[#1F2937] font-medium">{race?.name}</span></p>
-          <button onClick={() => navigate(`/races/${race?._id}`)} className="btn-primary">
+          <button onClick={() => navigate(`/races/${race?._id}/pick`)} className="btn-primary">
             View Race
           </button>
         </div>
