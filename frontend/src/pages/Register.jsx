@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, useNavigate, Navigate } from 'react-router-dom'
+import { Link, useNavigate, Navigate, useLocation } from 'react-router-dom'
 import { GoogleLogin } from '@react-oauth/google'
 import { useAuth } from '../context/AuthContext'
 import PageMeta from '../components/PageMeta'
@@ -9,6 +9,10 @@ import { validateEmail, validatePassword, validateName, validateConfirmPassword,
 export default function Register() {
   const { user, register, googleLogin } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+const params = new URLSearchParams(location.search)
+const redirectTo = params.get('redirect') || '/dashboard'
+
   const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' })
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState({})
@@ -31,7 +35,7 @@ export default function Register() {
     return () => { clearInterval(gsiCheckRef.current); clearTimeout(timeout) }
   }, [])
 
-  if (user) return <Navigate to="/dashboard" />
+if (user) return <Navigate to={redirectTo} replace />
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
@@ -61,10 +65,12 @@ export default function Register() {
 
     setLoading(true)
     try {
-      await register(form.name, form.email, form.password, form.confirmPassword)
-      // localStorage.setItem('token', res.data.token);
-      // localStorage.setItem('user', JSON.stringify(red.data.user));
-      navigate('/dashboard', { state: { registered: true } })
+await register(form.name, form.email, form.password, form.confirmPassword)
+
+setTimeout(() => {
+  navigate(redirectTo, { replace: true })
+}, 0)
+
     } catch (err) {
       const msg = err.response?.data?.error || err.response?.data?.details?.[0] || err.response?.data?.message
       if (msg) {
@@ -88,7 +94,7 @@ export default function Register() {
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
       await googleLogin(credentialResponse.credential)
-      navigate('/dashboard')
+navigate(redirectTo, { replace: true })
     } catch (err) {
       setError(err.response?.data?.error || 'Google signup failed')
     }
@@ -252,7 +258,18 @@ export default function Register() {
 
         <p className="text-center text-sm text-[#9CA3AF] mt-6">
           Already have an account?{' '}
-          <Link to="/login" className="text-[#D0A242] hover:text-[#C4963A]">Sign in</Link>
+ <Link
+  to={
+    redirectTo && redirectTo !== '/dashboard'
+      ? `/login?redirect=${encodeURIComponent(redirectTo)}`
+      : '/login'
+  }
+  className="text-[#D0A242] hover:text-[#C4963A]"
+>
+  Sign in
+</Link>
+
+
         </p>
       </div>
     </div>

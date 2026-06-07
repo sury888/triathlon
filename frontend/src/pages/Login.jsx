@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, useNavigate, Navigate } from 'react-router-dom'
+import { Link, useNavigate, Navigate, useLocation } from 'react-router-dom'
 import { GoogleLogin } from '@react-oauth/google'
 import { useAuth } from '../context/AuthContext'
 import PageMeta from '../components/PageMeta'
@@ -9,6 +9,10 @@ import { validateEmail } from '../utils/validation'
 export default function Login() {
   const { user, login, googleLogin } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+const params = new URLSearchParams(location.search)
+const redirectTo = params.get('redirect') || '/dashboard'
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -50,7 +54,7 @@ export default function Login() {
     setLoading(true)
     try {
       await login(email, password)
-      navigate('/dashboard')
+      navigate(redirectTo, { replace: true })
     } catch (err) {
       setError(err.response?.data?.error || 'Login failed')
     } finally {
@@ -62,7 +66,7 @@ export default function Login() {
     setError('')
     try {
       await googleLogin(credentialResponse.credential)
-      navigate('/dashboard')
+      navigate(redirectTo, { replace: true })
     } catch (err) {
       setError(err.response?.data?.error || 'Google login failed')
     }
@@ -164,7 +168,18 @@ export default function Login() {
 
         <p className="text-center text-sm text-[#9CA3AF] mt-6">
           Don't have an account?{' '}
-          <Link to="/register" className="text-[#D0A242] hover:text-[#C4963A]">Sign up</Link>
+<Link
+  to={
+    redirectTo && redirectTo !== '/dashboard'
+      ? `/register?redirect=${encodeURIComponent(redirectTo)}`
+      : '/register'
+  }
+  className="text-[#D0A242] hover:text-[#C4963A]"
+>
+  Sign up
+</Link>
+
+
         </p>
       </div>
     </div>

@@ -1083,7 +1083,7 @@ exports.joinRaceViaInvite = async (req, res) => {
 
     // Return the race data so frontend can navigate
     const populated = await Race.findById(race._id)
-      .populate('startList', 'name gender country ptoRank')
+      .populate('startList', 'name gender country ptoRanking swimRanking bikeRanking runRanking')
       .populate('results', 'athlete place totalTime status penalties');
 
     res.json({ race: populated });

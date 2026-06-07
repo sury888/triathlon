@@ -1029,9 +1029,9 @@ if (isOpen && !userIsCreator && !userHasPicks) {
                     </td>
                     <td className="py-2 pr-4 text-[#9CA3AF]">{entry.country || entry.athlete?.country || ''}</td>
                     <td className="py-2 pr-4 text-[#B45309]">{entry.ptoRanking || entry.athlete?.ptoRanking || '-'}</td>
-                    <td className="py-2 pr-4 text-center text-[#22D3EE] text-xs font-medium">#{entry.swimRanking || '-'}</td>
-                    <td className="py-2 pr-4 text-center text-[#D0A242] text-xs font-medium">#{entry.bikeRanking || '-'}</td>
-                    <td className="py-2 text-center text-[#E11D48] text-xs font-medium">#{entry.runRanking || '-'}</td>
+                    <td className="py-2 pr-4 text-center text-[#22D3EE] text-xs font-medium">#{entry.athlete?.swimRanking || '-'}</td>
+                    <td className="py-2 pr-4 text-center text-[#D0A242] text-xs font-medium">#{entry.athlete?.bikeRanking || '-'}</td>
+                    <td className="py-2 text-center text-[#E11D48] text-xs font-medium">#{entry.athlete?.runRanking || '-'}</td>
                   </tr>
                 ))}
               </tbody>

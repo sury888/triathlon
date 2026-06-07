@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import { useTheme } from './context/ThemeContext'
 import Navbar from './components/Navbar'
@@ -22,10 +22,24 @@ import PrivateRaceResults from './pages/PrivateRaceResults'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
-  if (loading) return <div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#D0A242]"></div></div>
-  if (!user) return <Navigate to="/login" />
+  const location = useLocation()
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#D0A242]"></div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    const redirect = encodeURIComponent(location.pathname + location.search)
+    return <Navigate to={`/login?redirect=${redirect}`} replace />
+  }
+
   return children
 }
+
 
 export default function App() {
   const { theme } = useTheme()
