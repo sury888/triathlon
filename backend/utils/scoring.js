@@ -241,7 +241,7 @@ gain: gain > 0 ? gain : 0,
 recordBonus: bd.recordBonus || 0,
 totalScore: bd.totalScore || 0,
 rawPlacement: bd.placementPoints || 0,
-multiplier: res ? (Math.abs((res.place || 999) - p.predictedPlace) === 0 ? 1.5 : Math.abs((res.place || 999) - p.predictedPlace) === 1 ? 1.25 : Math.abs((res.place || 999) - p.predictedPlace) === 2 ? 1.1 : Math.abs((res.place || 999) - p.predictedPlace) <= 5 ? 1.0 : 0.5) : 0,
+multiplier: res ? (Math.abs((res.place || 999) - p.predictedPlace) === 0 ? 1.5 : Math.abs((res.place || 999) - p.predictedPlace) === 1 ? 1.25 : Math.abs((res.place || 999) - p.predictedPlace) === 2 ? 1.1 : Math.abs((res.place || 999) - p.predictedPlace) <= 5 ? 1.0 : 0.75) : 0,
 rawTimeBonus: bd.timeBonus || 0,
 }
 });

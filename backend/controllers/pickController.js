@@ -16,7 +16,7 @@ if (!eligible) return 1.0;
 const place = res.place;
 
 if (place <= totalField * 0.25) return 2.0; // top 25%
-if (place >= totalField * 0.75) return 0.5; // bottom 25%
+if (place >= totalField * 0.75) return 0.75; // bottom 25%
 
 return 1.0; // middle 50%
 }

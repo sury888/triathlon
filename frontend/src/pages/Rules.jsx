@@ -357,31 +357,48 @@ export default function Rules() {
           </div>
           <div className="space-y-1.5">
             {[
-              ['Jan 18', 'T100 Miami', 'T100', 'Miami, FL'],
-              ['Feb 8', 'WTCS Abu Dhabi', 'WTCS', 'Abu Dhabi, UAE'],
-              ['Mar 1', 'T100 San Francisco', 'T100', 'San Francisco, CA'],
-              ['Mar 22', 'WTCS Yokohama', 'WTCS', 'Yokohama, Japan'],
-              ['Apr 5', 'Ironman 70.3 Oceanside', 'Ironman 70.3 Pro Series', 'Oceanside, CA'],
-              ['Apr 19', 'Challenge Gran Canaria', 'Challenge', 'Gran Canaria, Spain'],
-              ['Apr 26', 'T100 London', 'T100', 'London, UK'],
-              ['May 3', 'Ironman 70.3 St George', 'Ironman 70.3 Pro Series', 'St. George, UT'],
-              ['May 17', 'WTCS Cagliari', 'WTCS', 'Cagliari, Italy'],
-              ['May 31', 'Ironman Lanzarote', 'Ironman', 'Lanzarote, Spain'],
-              ['Jun 7', 'T100 Vegas', 'T100', 'Las Vegas, NV'],
-              ['Jun 14', 'Ironman 70.3 Mont-Tremblant', 'Ironman 70.3 Pro Series', 'Mont-Tremblant, QC'],
-              ['Jun 28', 'Challenge Roth', 'Challenge', 'Roth, Germany'],
-              ['Jul 5', 'Ironman Frankfurt', 'Ironman Pro Series', 'Frankfurt, Germany'],
-              ['Jul 12', 'Ironman 70.3 Gdynia', 'Ironman 70.3', 'Gdynia, Poland'],
-              ['Jul 26', 'WTCS Montreal', 'WTCS', 'Montreal, Canada'],
-              ['Aug 2', 'T100 Singapore', 'T100', 'Singapore'],
-              ['Aug 16', 'Ironman Pro Series Copenhagen', 'Ironman Pro Series', 'Copenhagen, Denmark'],
-              ['Aug 30', 'Ironman 70.3 Cascais', 'Ironman 70.3', 'Cascais, Portugal'],
-              ['Sep 6', 'Ironman Wisconsin', 'Ironman', 'Madison, WI'],
-              ['Sep 13', 'T100 Finale', 'T100', 'TBD'],
-              ['Sep 20', 'WTCS Grand Final', 'WTCS', 'TBD'],
-              ['Oct 4', 'Ironman World Championship', 'Ironman', 'Kona, HI'],
-              ['Oct 18', 'Ironman 70.3 World Championship', 'Ironman 70.3', 'Taupo, NZ'],
-              ['Nov 1', 'Challenge Daytona', 'Challenge', 'Daytona Beach, FL'],
+// const raceSchedule = [
+  // --- 2026 Ironman Pro Series ---
+  ['Mar 7', 'Ironman New Zealand', 'Ironman Pro Series', 'Taupo, New Zealand'],
+  ['Mar 22', 'Ironman 70.3 Geelong', 'Ironman Pro Series', 'Geelong, Australia'],
+  ['Mar 28', 'Ironman 70.3 Oceanside', 'Ironman Pro Series', 'Oceanside, CA'],
+  ['Apr 18', 'Ironman Texas', 'Ironman Pro Series', 'The Woodlands, TX'],
+  ['May 17', 'Ironman 70.3 Aix-en-Provence', 'Ironman Pro Series', 'Aix-en-Provence, France'],
+  ['Jun 7', 'Ironman Hamburg', 'Ironman Pro Series', 'Hamburg, Germany'],
+  ['Jun 14', 'Ironman 70.3 Happy Valley', 'Ironman Pro Series', 'State College, PA'],
+  ['Jun 21', 'Ironman 70.3 Elsinore', 'Ironman Pro Series', 'Elsinore, Denmark'],
+  ['Jun 28', 'Ironman Frankfurt', 'Ironman Pro Series', 'Frankfurt, Germany'],
+  ['Jul 12', 'Ironman 70.3 Swansea', 'Ironman Pro Series', 'Swansea, Great Britain'],
+  ['Jul 19', 'Ironman Lake Placid', 'Ironman Pro Series', 'Lake Placid, NY'],
+  ['Jul 25', 'Ironman 70.3 Boise', 'Ironman Pro Series', 'Boise, ID'],
+  ['Aug 15', 'Ironman Kalmar', 'Ironman Pro Series', 'Kalmar, Sweden'],
+  ['Aug 30', 'Ironman 70.3 Zell am See-Kaprun', 'Ironman Pro Series', 'Zell am See, Austria'],
+  ['Sep 12', 'Ironman 70.3 World Championship Nice', 'Ironman Pro Series', 'Nice, France'],
+  ['Oct 10', 'Ironman World Championship Kona', 'Ironman Pro Series', 'Kailua-Kona, HI'],
+
+  // --- 2026 T100 Series ---
+  ['Mar 21', 'T100 Gold Coast', 'T100', 'Gold Coast, Australia'],
+  ['Apr 25', 'T100 Singapore', 'T100', 'Singapore'],
+  ['May 23', 'T100 Spain', 'T100', 'Spain'],
+  ['Jun 6', 'T100 San Francisco', 'T100', 'San Francisco, USA'],
+  ['Aug 15', 'T100 Vancouver', 'T100', 'Vancouver, Canada'],
+  ['Sep 19', 'T100 French Riviera', 'T100', 'Frejus, France'],
+  ['Nov 14', 'T100 Dubai', 'T100', 'Dubai, UAE'],
+  ['Dec 11', 'T100 Qatar Grand Final', 'T100', 'Doha, Qatar'],
+
+  // --- 2026 WTCS ---
+  ['Mar 27', 'WTCS Abu Dhabi', 'WTCS', 'Abu Dhabi, UAE'],
+  ['Apr 25', 'WTCS Samarkand', 'WTCS', 'Samarkand, Uzbekistan'],
+  ['May 16', 'WTCS Yokohama', 'WTCS', 'Yokohama, Japan'],
+  ['May 30', 'WTCS Alghero', 'WTCS', 'Alghero, Italy'],
+  ['Jun 20', 'WTCS Quiberon', 'WTCS', 'Quiberon, France'],
+  ['Jul 11', 'WTCS Hamburg', 'WTCS', 'Hamburg, Germany'],
+  ['Jul 25', 'WTCS London', 'WTCS', 'London, Great Britain'],
+  ['Aug 29', 'WTCS Weihai', 'WTCS', 'Weihai, China'],
+  ['Sep 13', 'WTCS Karlovy Vary', 'WTCS', 'Karlovy Vary, Czechia'],
+  ['Sep 25', 'WTCS Pontevedra', 'WTCS', 'Pontevedra, Spain'],
+
+
             ].filter(([, , series]) => scheduleTab === 'All' || series === scheduleTab)
              .map(([date, name, series, location]) => (
               <div key={name} className="flex items-center gap-3 p-2.5 rounded-lg bg-[rgba(245,243,238,0.6)]">

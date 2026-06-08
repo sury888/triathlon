@@ -19,6 +19,8 @@ import Rules from './pages/Rules'
 import CreatePrivateRace from './pages/CreatePrivateRace'
 import JoinPrivateRace from './pages/JoinPrivateRace'
 import PrivateRaceResults from './pages/PrivateRaceResults'
+import Legal from './pages/legal'
+
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -65,6 +67,7 @@ export default function App() {
           <Route path="/leagues/:id" element={<LeagueDetail />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/legal" element={<Legal />} />
           <Route path="/rules" element={<Rules />} />
         </Routes>
       </main>
