@@ -318,9 +318,9 @@ export default function CreatePrivateRace({ editMode = false }) {
                     onChange={e => updateSideBet(i, 'difficulty', e.target.value)}
                     className="input-field flex-1"
                   >
-                    <option value="easy">Easy (+1 pt)</option>
-                    <option value="medium">Medium (+3 pts)</option>
-                    <option value="hard">Hard (+5 pts)</option>
+                    <option value="easy">Easy (+5 pt)</option>
+                    <option value="medium">Medium (+10 pts)</option>
+                    <option value="hard">Hard (+15 pts)</option>
                   </select>
                 </div>
               </div>

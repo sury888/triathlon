@@ -9,10 +9,15 @@ function scoreSideBets(pick, race) {
 let total = 0;
 const breakdown = {};
 
+console.log('pick.sideBets type', typeof pick.sideBets);
+console.log('pick.sideBets instance of map', pick.sideBets instanceof Map);
+console.log('pick.sideBets json', JSON.stringify(pick.sideBets));
+console.log('pick.sideBets resolved', (race.sideBetsConfig || []).map(b => ({ key: b.key, resolved: b.resolved, result: b.result})));
+
 (race.sideBetsConfig || []).forEach(bet => {
 if (!bet.resolved) return;
 
-const userPick = pick.sideBets?.[bet.key];
+const userPick = pick.sideBets instanceof Map ? pick.sideBets.get(bet.key) : pick.sideBets?.[bet.key];
 if (userPick === undefined) return;
 
 const correct = userPick === bet.result;
@@ -205,7 +210,11 @@ return Math.round((res.score || 0) * multiplier);
 }
 
 function scoreFastestPick(pick, actual) {
-return pick?.toString() === actual?.toString() ? 10 : 0;
+  if (!pick || !actual) return 0;
+  const pickId = (pick._id || pick).toString();
+  const actualId = (actual._id || actual).toString();
+//return pickId == actualId  ? 10 : 0;
+return pickId.toString() == actualId.toString()  ? 10 : 0;
 }
 
 for (const pick of picks) {
@@ -278,11 +287,20 @@ pick.fantasyBreakdown = {
 athletePicks: athleteBreakdown,
 fastest: fastestBreakdown,
 sideBets: sideBreakdown
+// {
+//   totalPoints: sideTotal, 
+//   bets: Objext.entries(sideBreakdown).map(([key, val]) =>({
+//     key, 
+//     name: val.prompt, 
+//     pick: String(val.userPick ?? ''),
+//     result: String(val.result ?? ''),
+//     correct: val.correct,
+//     points: val.points
+//   }))}
 };
 pick.markModified('fantasyBreakdown');
 await pick.save();
 }
-
 return picks.length;
 }
 

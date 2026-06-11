@@ -5,6 +5,9 @@ import api from '../utils/api'
 import PageMeta from '../components/PageMeta'
 import ErrorAlert from '../components/ErrorAlert'
 
+
+
+
 function formatTime(totalSeconds) {
   if (!totalSeconds) return ''
   const h = Math.floor(totalSeconds / 3600)
@@ -48,24 +51,29 @@ export default function PrivateRaceResults() {
         setRace(data)
 
         if (data.results && data.results.length > 0) {
-          setResults(data.results.map(r => ({
-            athlete: r.athlete || r.name,
-            totalTime: r.totalTimeSeconds ? formatTime(r.totalTimeSeconds) : '',
-            swimTime: r.swimTimeSeconds ? formatTime(r.swimTimeSeconds) : '',
-            bikeTime: r.bikeTimeSeconds ? formatTime(r.bikeTimeSeconds) : '',
-            runTime: r.runTimeSeconds ? formatTime(r.runTimeSeconds) : '',
-            dnf: r.dnf || false
-          })))
-        } else if (data.startList && data.startList.length > 0) {
-          setResults(data.startList.map(a => ({
-            athlete: a.athleteName || a.name || a.athlete,
-            totalTime: '',
-            swimTime: '',
-            bikeTime: '',
-            runTime: '',
-            dnf: false
-          })))
-        }
+  // Load existing results
+  setResults(data.results.map(r => ({
+    athlete: r.athlete,
+    athleteName: r.athleteName,
+    totalTime: r.totalTimeSeconds ? formatTime(r.totalTimeSeconds) : '',
+    swimTime: r.swimTimeSeconds ? formatTime(r.swimTimeSeconds) : '',
+    bikeTime: r.bikeTimeSeconds ? formatTime(r.bikeTimeSeconds) : '',
+    runTime: r.runTimeSeconds ? formatTime(r.runTimeSeconds) : '',
+    dnf: r.dnf || false
+  })));
+} else if (data.startList && data.startList.length > 0) {
+  // Load start list for new results entry
+  setResults(data.startList.map(a => ({
+    athlete: a.athlete || a._id,
+    athleteName: a.athleteName || a.name,
+    totalTime: '',
+    swimTime: '',
+    bikeTime: '',
+    runTime: '',
+    dnf: false
+  })));
+}
+
 
         // Initialize side bet answers from existing resolved bets
         if (data.sideBetsConfig && data.sideBetsConfig.length > 0) {
@@ -122,14 +130,16 @@ export default function PrivateRaceResults() {
 
     setSubmitting(true)
     try {
-      const payload = results.map(r => ({
-        athlete: r.athlete,
-        totalTimeSeconds: r.dnf ? 0 : parseTimeToSeconds(r.totalTime),
-        swimTimeSeconds: r.dnf ? 0 : parseTimeToSeconds(r.swimTime),
-        bikeTimeSeconds: r.dnf ? 0 : parseTimeToSeconds(r.bikeTime),
-        runTimeSeconds: r.dnf ? 0 : parseTimeToSeconds(r.runTime),
-        dnf: r.dnf
-      }))
+    const payload = results.map(r => ({
+  athlete: r.athlete,          // ObjectId
+  athleteName: r.athleteName,  // String
+  totalTimeSeconds: r.dnf ? 0 : parseTimeToSeconds(r.totalTime),
+  swimTimeSeconds: r.dnf ? 0 : parseTimeToSeconds(r.swimTime),
+  bikeTimeSeconds: r.dnf ? 0 : parseTimeToSeconds(r.bikeTime),
+  runTimeSeconds: r.dnf ? 0 : parseTimeToSeconds(r.runTime),
+  dnf: r.dnf
+}))
+
 
       const sideBetResults = sideBets.map(bet => ({
         key: bet.key,
@@ -250,7 +260,7 @@ export default function PrivateRaceResults() {
                   {r.dnf ? 'DNF' : `${i + 1}.`}
                 </span>
 
-                <span className="font-semibold text-[#1F2937] flex-1">{r.athlete}</span>
+                <span className="font-semibold text-[#1F2937] flex-1">{r.athleteName}</span>
 
                 <label className="flex items-center gap-1.5 text-sm cursor-pointer">
                   <input

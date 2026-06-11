@@ -226,7 +226,8 @@ league.members.forEach(m => userMap.set(m._id.toString(), []));
 
 const scoredPicks = picks.filter(p => p.race?.status === "Finished and Scored");
 scoredPicks.forEach(p => {
-const uid = p.user.toString();
+if(p.race?.isPrivate) return;
+  const uid = p.user.toString();
 if (userMap.has(uid)) {
 userMap.get(uid).push(p);
 }
@@ -306,6 +307,7 @@ const userMap = new Map();
 league.members.forEach(m => userMap.set(m._id.toString(), []));
 const scoredPicks = picks.filter(p => p.race?.status === "Finished and Scored");
 scoredPicks.forEach(p => {
+  if (p.race?.isPrivate) return;
 const uid = p.user.toString();
 if (userMap.has(uid)) {
 userMap.get(uid).push(p);
@@ -402,7 +404,7 @@ const scoredPicks = picks.filter(p => p.race?.status === "Finished and Scored");
 scoredPicks.forEach(pick => {
 const uid = pick.user._id.toString();
 if (!totals.has(uid)) return;
-
+if (pick.race?.isPrivate) return;
 if (pick.race?.isScored) {
 
 totals.get(uid).total += pick.fantasyScoreTotal || 0;

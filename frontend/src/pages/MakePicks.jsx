@@ -245,12 +245,12 @@ const mobileFieldRef = useRef(null)
 
 const scrollToMobileField = () => {
 if (window.innerWidth < 1024 && mobileFieldRef.current) {
-setTimeout(() => mobileFieldRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
+setTimeout(() => mobileFieldRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100)
 }
 }
 const scrollToMobilePicks = () => {
 if (window.innerWidth < 1024 && mobilePicksRef.current) {
-setTimeout(() => mobilePicksRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
+setTimeout(() => mobilePicksRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100)
 }
 }
 
@@ -542,11 +542,18 @@ const allComplete = Object.keys(stateToSave).every(g => {
 const gs = stateToSave[g]
 const raceForGender = getRaceForGender(g)
 if (!raceForGender?.startList?.length) return true
+
 const fieldSize = raceForGender.startList.length
 const requiredPicks = Math.min(5, fieldSize)
 const filledSlots = gs.slots.filter(s => s !== null).length
+const splitsOk = gs.splits.swim && gs.splits.bike && gs.splits.run
+const underdogOk = race?.isPrivate || gs.underdogIndex >= 0
+//return slotsOk && splitsOk && underdogOk
+
+
+
 if (race?.isPrivate) return filledSlots >= requiredPicks
-return gs.slots.every(s => s !== null) && gs.splits.swim && gs.splits.bike && gs.splits.run
+return filledSlots >= requiredPicks && slotsOk && splitsOk
 })
 
 const pickStatus = allComplete ? 'submitted' : 'draft'
@@ -579,7 +586,8 @@ status: pickStatus
 
 isDirty.current = false
 
-setSaveStatus(allComplete ? 'submitted' : 'saved')
+//setSaveStatus(allComplete ? 'submitted' : 'saved')
+setSaveStatus('saved')
 } catch {
 setSaveStatus('')
 }
@@ -603,6 +611,7 @@ const errors = validatePicks()
 if (errors.length > 0) { setValidationErrors(errors); return }
 if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
 await savePicks(genderState, sideBets)
+setSaveStatus('submitted')
 setSuccess('Picks submitted successfully!')
 setTimeout(() => setSuccess(''), 4000)
 }

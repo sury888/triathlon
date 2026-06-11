@@ -256,7 +256,9 @@ EST: "Estonia",
 SRB: "Serbia",
 KOR: "South Korea",
 Australia: "Australia",
-FPO: "Tahiti"
+FPO: "Tahiti", 
+CAM: "Cambodia", 
+BLR: "Belarus"
 // add more as needed
 };
 
@@ -560,6 +562,11 @@ exports.processResults = async (req, res) => {
 try {
 const raceId = req.params.id;
 const race = await Race.findById(raceId);
+// ⭐ Private races use Ironman 70.3 scoring
+// if (race.isPrivate) {
+//   race.series = "Ironman 70.3 Pro Series";
+// }
+
 if (!race) return res.status(404).json({ error: "Race not found" });
 
 if (race.status !== "Closed" && race.status !== "Finished and Scored") {
@@ -1002,35 +1009,75 @@ exports.submitPrivateRaceResults = async (req, res) => {
     if (!race) return res.status(404).json({ error: 'Race not found' });
     if (!race.isPrivate) return res.status(400).json({ error: 'This endpoint is only for private races' });
 
-    // Only creator can submit results
     const userId = req.user?.userId || req.user?._id;
     if (String(race.createdBy) !== String(userId)) {
       return res.status(403).json({ error: 'Only the race creator can enter results' });
     }
 
     const { results: inputResults, sideBetResults } = req.body;
-
     if (!Array.isArray(inputResults) || inputResults.length === 0) {
       return res.status(400).json({ error: 'Results must be a non-empty array' });
     }
 
-    // Build results with placement based on order/time
-    const processedResults = inputResults.map((r, index) => ({
-      athlete: r.athlete,
-      athleteName: r.athlete,
-      place: r.dnf ? null : index + 1,
-      totalTimeSeconds: r.totalTimeSeconds || 0,
-      swimTimeSeconds: r.swimTimeSeconds || 0,
-      bikeTimeSeconds: r.bikeTimeSeconds || 0,
-      runTimeSeconds: r.runTimeSeconds || 0,
-      status: r.dnf ? 'DNF' : 'Finished',
-      dnf: r.dnf || false
-    }));
+    // ⭐ Build a startRank lookup from the race's startList
+    const startRankMap = new Map();
+    (race.startList || []).forEach(s => {
+      startRankMap.set(s.athlete.toString(), s.startRank);
+    });
+
+    // ⭐ Normalize athlete to ObjectId — frontend sends full populated object
+    const processedResults = inputResults.map((r, index) => {
+      const athleteId = r.athlete?._id || r.athlete;
+      return {
+        athlete: athleteId,
+        athleteName: r.athleteName,
+        place: r.dnf ? null : index + 1,
+        totalTimeSeconds: r.totalTimeSeconds || 0,
+        swimTimeSeconds: r.swimTimeSeconds || 0,
+        bikeTimeSeconds: r.bikeTimeSeconds || 0,
+        runTimeSeconds: r.runTimeSeconds || 0,
+        status: r.dnf ? 'DNF' : 'Finished',
+        dnf: r.dnf || false,
+        startRank: startRankMap.get(String(athleteId)) || null,
+        score: 0,
+        breakdown: {}
+      };
+    });
 
     // Sort non-DNF by totalTime, then append DNFs
     const finished = processedResults.filter(r => !r.dnf).sort((a, b) => a.totalTimeSeconds - b.totalTimeSeconds);
     const dnfs = processedResults.filter(r => r.dnf);
     const sorted = [...finished.map((r, i) => ({ ...r, place: i + 1 })), ...dnfs];
+
+    // Score using Ironman 70.3 rules without changing DB series
+    const scoredFinishers = scoreRace(
+      sorted.filter(r => r.status === 'Finished'),
+      "Ironman 70.3 Pro Series",
+      race.swimCourseRecord ?? 0,
+      race.bikeCourseRecord ?? 0,
+      race.runCourseRecord ?? 0,
+      race.totalCourseRecord ?? 0,
+      race.startList || []
+    );
+
+    // Merge scoring — use String() for safe comparison
+    const finalResults = sorted.map(raw => {
+      const scored = scoredFinishers.find(s => String(s.athlete) === String(raw.athlete));
+      return {
+        ...raw,
+        score: scored ? scored.score : (raw.status !== 'Finished' ? -10 : 0),
+        breakdown: scored ? scored.breakdown : null
+      };
+    });
+
+    // Fastest splits (already normalized to ObjectId strings)
+    const fastest = { swim: null, bike: null, run: null };
+    ['swim', 'bike', 'run'].forEach(dis => {
+      const key = `${dis}TimeSeconds`;
+      const valid = finished.filter(f => f[key] > 0);
+      if (valid.length === 0) return;
+      fastest[dis] = valid.sort((a, b) => a[key] - b[key])[0].athlete;
+    });
 
     // Handle side bet results
     let updatedSideBets = race.sideBetsConfig || [];
@@ -1038,25 +1085,37 @@ exports.submitPrivateRaceResults = async (req, res) => {
       updatedSideBets = updatedSideBets.map(bet => {
         const answer = sideBetResults.find(s => s.key === bet.key);
         if (answer) {
-          return { ...bet.toObject ? bet.toObject() : bet, result: answer.result, resolved: true };
+          const safeBet = typeof bet.toObject === 'function' ? bet.toObject() : bet;
+          return { ...safeBet, result: answer.result, resolved: true };
         }
         return bet.toObject ? bet.toObject() : bet;
       });
     }
 
+    // Save — series stays "Custom", status goes straight to "Finished and Scored"
     await Race.findByIdAndUpdate(req.params.id, {
       $set: {
-        results: sorted,
+        results: finalResults,
         sideBetsConfig: updatedSideBets,
         status: 'Finished and Scored',
-        dnfCount: dnfs.length
+        dnfCount: dnfs.length,
+        fastestSwimmer: fastest.swim,
+        fastestBiker: fastest.bike,
+        fastestRunner: fastest.run
       }
     });
 
-    res.json({ message: 'Results submitted successfully', results: sorted });
+    // Score fantasy picks
+    try {
+      await scoreFantasyPicksForRace(req.params.id, finalResults, fastest, race.name);
+    } catch (fantasyErr) {
+      console.error('Fantasy scoring error (non-fatal):', fantasyErr);
+    }
+
+    res.json({ message: 'Results submitted and scored', results: finalResults });
   } catch (err) {
     console.error('Submit private race results error:', err);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: 'Server error', details: err.message });
   }
 };
 

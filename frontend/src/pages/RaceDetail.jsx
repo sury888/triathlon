@@ -218,7 +218,26 @@ function UserPicksScored({ picks, raceId }) {
   const athletePicks = fb.athletePicks || []
   const fastest = fb.fastest || {}
   const fastestTotal = (fastest.swim || 0) + (fastest.bike || 0) + (fastest.run || 0)
-
+    // Normalize sideBets — backend saves as object keyed by bet.key,
+  // frontend needs { totalPoints, bets[] }
+  const rawSideBets = fb.sideBets || {}
+  let sideBetsDisplay
+  if (Array.isArray(rawSideBets.bets)) {
+    sideBetsDisplay = rawSideBets
+  } else {
+    const betsArr = Object.entries(rawSideBets).map(([key, val]) => ({
+      key,
+      name: val.prompt || key,
+      pick: String(val.userPick ?? ''),
+      result: String(val.result ?? ''),
+      correct: !!val.correct,
+      points: val.points || 0
+    }))
+    sideBetsDisplay = {
+      totalPoints: betsArr.reduce((sum, b) => sum + b.points, 0),
+      bets: betsArr
+    }
+  }
   const toggleAthlete = (idx) => {
     setExpandedAthletes(prev => {
       const next = new Set(prev)
@@ -373,11 +392,11 @@ function UserPicksScored({ picks, raceId }) {
             </div>
           )}
 
-          {fb.sideBets && (fb.sideBets.totalPoints > 0 || (fb.sideBets.bets && fb.sideBets.bets.length > 0)) && (
+                    {sideBetsDisplay.bets.length > 0 && (
             <div>
-              <p className="text-sm font-medium text-[#6B7280] mb-2">Side Bets <span className="text-[#D0A242]">+{fb.sideBets.totalPoints || 0} pts</span></p>
+              <p className="text-sm font-medium text-[#6B7280] mb-2">Side Bets <span className="text-[#D0A242]">+{sideBetsDisplay.totalPoints} pts</span></p>
               <div className="space-y-1.5">
-                {(fb.sideBets.bets || []).map((bet, bi) => (
+                {sideBetsDisplay.bets.map((bet, bi) => (
                   <div key={bi} className="flex items-center justify-between text-sm p-2 bg-[rgba(245,243,238,0.6)] rounded-lg">
                     <div>
                       <p className="text-[#6B7280] text-xs">{bet.name}</p>
@@ -838,7 +857,7 @@ if (isOpen && !userIsCreator && !userHasPicks) {
               {race.isPrivate && <span className="text-xs px-2 py-0.5 rounded-full border border-[#D0A242]/20 bg-[rgba(208,162,66,0.08)] text-[#D0A242] font-medium">Private</span>}
             </div>
             <p className="text-[#9CA3AF]">
-              {race.location} • {race.series || 'Private Race'}
+              {race.location} • {race.displaySeries || 'Private Race'}
               {hasResults && ` • ${new Date(activeRace.date || activeRace.lockTime).toLocaleDateString()}`}
               {genders.length === 1 ? ` • ${race.gender === 'M' ? 'Men' : 'Women'}` : ''}
             </p>
@@ -853,7 +872,7 @@ if (isOpen && !userIsCreator && !userHasPicks) {
               Sign In to Pick
             </Link>
           )}
-                    {race.isPrivate && user && (race.createdBy) === String(user._id) && !hasResults && (
+                    {race.isPrivate && user && (race.createdBy) === String(user._id) && (
             <div className="flex gap-2">
               <Link to={`/races/${race._id}/edit`} className="px-4 py-2 rounded-lg bg-[#E8E3DA] hover:bg-[#F0EDE8] text-[#1F2937] text-sm font-semibold transition-colors flex items-center gap-2">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -865,7 +884,7 @@ if (isOpen && !userIsCreator && !userHasPicks) {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                 </svg>
-                Enter Results
+                {hasResults ? 'Edit Results' : 'Enter Results'}
               </Link>
             </div>
           )}
@@ -999,8 +1018,10 @@ if (isOpen && !userIsCreator && !userHasPicks) {
         </div>
       )}
 
-      {/* Start List */}
-      {activeRace.startList && activeRace.startList.length > 0 && !hasResults && (
+           {/* Start List */}
+      {activeRace.startList && activeRace.startList.length > 0 && !hasResults && (() => {
+        const isWTCS = activeRace.series === 'WTCS'
+        return (
         <div className="card mb-8">
           <h2 className="text-xl font-semibold mb-4">Start List</h2>
           <div className="overflow-x-auto">
@@ -1010,10 +1031,20 @@ if (isOpen && !userIsCreator && !userHasPicks) {
                   <th className="pb-2 pr-4">#</th>
                   <th className="pb-2 pr-4">Athlete</th>
                   <th className="pb-2 pr-4">Country</th>
-                  <th className="pb-2 pr-4 text-[#67E8F9]">PTO</th>
-                  <th className="pb-2 pr-4 text-center text-[#22D3EE]">Swim</th>
-                  <th className="pb-2 pr-4 text-center text-[#D0A242]">Bike</th>
-                  <th className="pb-2 text-center text-[#E11D48]">Run</th>
+                  {isWTCS ? (
+                    <>
+                      <th className="pb-2 pr-4 text-[#A5B4FC]">WTCS Rank</th>
+                      <th className="pb-2 pr-4 text-center text-[#B45309]">Win%</th>
+                      <th className="pb-2 text-center text-[#B45309]">Podium%</th>
+                    </>
+                  ) : (
+                    <>
+                      <th className="pb-2 pr-4 text-[#67E8F9]">PTO</th>
+                      <th className="pb-2 pr-4 text-center text-[#22D3EE]">Swim</th>
+                      <th className="pb-2 pr-4 text-center text-[#D0A242]">Bike</th>
+                      <th className="pb-2 text-center text-[#E11D48]">Run</th>
+                    </>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -1021,24 +1052,34 @@ if (isOpen && !userIsCreator && !userHasPicks) {
                   <tr key={i} className="border-b border-[rgba(180,190,200,0.3)]">
                     <td className="py-2 pr-4 text-[#9CA3AF]">{entry.startRank || i + 1}</td>
                     <td className="py-2 pr-4 font-medium">
-                      {(entry.athlete && typeof entry.athlete === 'string') ? (
-                        <Link to={`/leaderboard?tab=athletes&expand=${entry.athlete}`} className="hover:text-[#D0A242] transition-colors">{entry.athleteName || 'Unknown'}</Link>
+                      {entry.athlete ? (
+                        <Link to={`/leaderboard?tab=athletes&expand=${entry.athlete?._id || entry.athlete}`} className="hover:text-[#D0A242] transition-colors">{entry.athleteName || entry.athlete?.name || 'Unknown'}</Link>
                       ) : (
-                        entry.athleteName || entry.athlete?.name || 'Unknown'
+                        entry.athleteName || 'Unknown'
                       )}
                     </td>
                     <td className="py-2 pr-4 text-[#9CA3AF]">{entry.country || entry.athlete?.country || ''}</td>
-                    <td className="py-2 pr-4 text-[#B45309]">{entry.ptoRanking || entry.athlete?.ptoRanking || '-'}</td>
-                    <td className="py-2 pr-4 text-center text-[#22D3EE] text-xs font-medium">#{entry.athlete?.swimRanking || '-'}</td>
-                    <td className="py-2 pr-4 text-center text-[#D0A242] text-xs font-medium">#{entry.athlete?.bikeRanking || '-'}</td>
-                    <td className="py-2 text-center text-[#E11D48] text-xs font-medium">#{entry.athlete?.runRanking || '-'}</td>
+                    {isWTCS ? (
+                      <>
+                        <td className="py-2 pr-4 text-[#A5B4FC]">{entry.wtsRanking || entry.athlete?.wtsRanking || '-'}</td>
+                        <td className="py-2 pr-4 text-center text-[#B45309] text-xs font-medium">{entry.winPct || entry.athlete?.winPct || '0'}%</td>
+                        <td className="py-2 text-center text-[#B45309] text-xs font-medium">{entry.podiumPct || entry.athlete?.podiumPct || '0'}%</td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="py-2 pr-4 text-[#B45309]">{entry.ptoRanking || entry.athlete?.ptoRanking || '-'}</td>
+                        <td className="py-2 pr-4 text-center text-[#22D3EE] text-xs font-medium">#{entry.swimRanking || entry.athlete?.swimRanking || '-'}</td>
+                        <td className="py-2 pr-4 text-center text-[#D0A242] text-xs font-medium">#{entry.bikeRanking || entry.athlete?.bikeRanking || '-'}</td>
+                        <td className="py-2 text-center text-[#E11D48] text-xs font-medium">#{entry.runRanking || entry.athlete?.runRanking || '-'}</td>
+                      </>
+                    )}
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         </div>
-      )}
-    </div>
+        )
+      })()}    </div>
   )
 }

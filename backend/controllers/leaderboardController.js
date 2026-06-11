@@ -27,7 +27,8 @@ as: 'raceDoc'
 {
 $match: {
 'raceDoc.name': { $regex: season, $options: 'i' },
-'raceDoc.status': 'Finished and Scored'
+'raceDoc.status': 'Finished and Scored',
+'raceDoc.isPrivate': { $ne: true}
 }
 },
 
@@ -254,8 +255,9 @@ races: []
 picks.forEach(pick => {
 const uid = pick.user._id.toString();
 if (!totals.has(uid)) return;
-
+if (pick.race?.isPrivate) return;
 if (pick.race?.isScored) {
+
 
 totals.get(uid).total += pick.fantasyScoreTotal || 0;
 
@@ -313,7 +315,7 @@ user: { $in: league.members.map(m => m._id) }
 
 // Filter picks by season (race name contains year)
 const seasonPicks = picks.filter(p =>
-p.race?.name?.toString().includes(season)
+p.race?.name?.toString().includes(season) && !p.race?.isPrivate
 );
 const start = new Date(`${season}-01-01`);
 const end = new Date(`${parseInt(season) + 1}-01-01`);
@@ -452,6 +454,7 @@ races: []
 picks.forEach(pick => {
 const uid = pick.user._id.toString();
 if (!totals.has(uid)) return;
+if (!pick.race?.isPrivate) return;
 
 if (pick.race?.isScored) {
 totals.get(uid).total += pick.fantasyScoreTotal || 0;

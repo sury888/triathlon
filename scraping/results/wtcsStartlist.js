@@ -49,8 +49,8 @@ function assignSplitRanks(results) {
 const sleep = ms => new Promise(res => setTimeout(res, ms));
 
 const programs2026 = [
-  { eventId: 195146, programId: 676652, label: "2026 WTCS Alghero Men" },
-  { eventId: 195146, programId: 676653, label: "2026 WTCS Alghero Women" }, 
+  { eventId: 195147, programId: 676663, label: "2026 WTCS Quiberon Men" },
+  { eventId: 195147, programId: 676664, label: "2026 WTCS Quiberon Women" }, 
 ];
 
 /* ---------------------------------------------------------

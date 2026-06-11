@@ -54,7 +54,7 @@ function formatLockDate(lockTime) {
 function groupByEvent(raceList) {
   const map = {}
   for (const r of raceList) {
-    const slug = r.eventSlug || r.name.replace(/\s*(Men|Women|Male|Female|M|F)\s*$/i, '').trim() + '|' +(r.date || r.lockTime)
+    const slug = r.eventSlug || r.name.replace(/\s*(Men|Women|Male|Female|M|F)\s*$/i, '').trim() 
     if (!map[slug]) {
       map[slug] = {
         eventSlug: slug,
