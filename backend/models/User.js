@@ -35,6 +35,26 @@ trim: true,
 lowercase: true,
 match: [/\S+@\S+\.\S+/, "Email is invalid"]
 },
+raceScores: [{
+  race: { type: mongoose.Schema.Types.ObjectId, ref: 'Race', required: true },
+  place: Number,
+  score: Number,
+  breakdown: {
+    placementPoints: Number,
+    timeBonus: Number,
+    splitBonus: Number,
+    splitBreakdown: {
+      swim: Number,
+      bike: Number,
+      run: Number
+    },
+    underdogBonus: Number,
+    gain: Number,
+    recordBonus: Number,
+    totalScore: Number
+  },
+  status: String
+}],
 
 password: {
 type: String,

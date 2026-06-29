@@ -1,28 +1,50 @@
 Rank	Name	Nation	Swim	Bike	Run	Time	Gender	Race
-1	Solveig Loevseth	NOR	00:54:57 (14)	04:20:06 (1)	02:49:21 (3)	8:11:11	F	Ironman Hamburg 2026
-2	Laura Philipp	GER	00:54:53 (10)	04:28:21 (7)	02:42:16 (1)	8:12:29	F	Ironman Hamburg 2026
-3	Katrine Graesboell Christensen	DEN	01:00:51 (19)	04:21:47 (3)	02:45:45 (2)	8:15:20	F	Ironman Hamburg 2026
-4	Marjolaine Pierre	FRA	00:53:33 (6)	04:21:07 (2)	02:56:45 (9)	8:18:01	F	Ironman Hamburg 2026
-5	Lisa Perterer	AUT	00:54:51 (9)	04:25:58 (4)	02:53:49 (5)	8:22:31	F	Ironman Hamburg 2026
-6	Lotte Wilms	NED	00:50:29 (1)	04:26:03 (5)	03:00:51 (12)	8:24:58	F	Ironman Hamburg 2026
-7	India Lee	GBR	00:54:59 (15)	04:27:34 (6)	02:54:47 (6)	8:25:32	F	Ironman Hamburg 2026
-8	Marta Lagownik	POL	00:55:01 (16)	04:35:47 (10)	02:52:24 (4)	8:30:08	F	Ironman Hamburg 2026
-9	Fenella Langridge	GBR	00:50:34 (3)	04:37:57 (11)	02:56:11 (8)	8:31:54	F	Ironman Hamburg 2026
-10	Kate Curran	GBR	00:50:36 (4)	04:42:37 (15)	02:55:34 (7)	8:35:39	F	Ironman Hamburg 2026
-11	Charlotte McShane	AUS	00:50:39 (5)	04:43:58 (16)	02:58:08 (10)	8:42:12	F	Ironman Hamburg 2026
-12	Kaidi Kivioja	EST	01:00:03 (18)	04:30:16 (8)	03:07:01 (16)	8:44:44	F	Ironman Hamburg 2026
-13	Jenny Jendryschik	GER	00:55:01 (16)	04:47:04 (19)	02:58:24 (11)	8:47:29	F	Ironman Hamburg 2026
-14	Johanna Ahrens	GER	00:54:56 (13)	04:40:50 (12)	03:06:02 (14)	8:49:14	F	Ironman Hamburg 2026
-15	Antonia Milowsky	GER	00:54:50 (8)	04:41:24 (13)	03:09:44 (17)	8:53:19	F	Ironman Hamburg 2026
-16	Shiva Leisner	DEN	01:02:46 (21)	04:45:37 (17)	03:06:10 (15)	9:01:57	F	Ironman Hamburg 2026
-17	Rachel Brown	GBR	01:02:58 (22)	04:55:06 (23)	03:04:08 (13)	9:09:56	F	Ironman Hamburg 2026
-18	Maaike Vooren	NED	00:53:36 (7)	04:46:26 (18)	03:25:52 (19)	9:14:48	F	Ironman Hamburg 2026
-19	Miranda Tomenson	CAN	00:54:55 (12)	05:05:52 (25)	03:12:48 (18)	9:24:48	F	Ironman Hamburg 2026
-20	Serena Carter	GBR	01:03:01 (23)	04:47:12 (20)	03:26:12 (20)	9:25:48	F	Ironman Hamburg 2026
-21	Mareike Guhl	GER	01:16:04 (27)	05:23:35 (26)	03:58:07 (21)	10:47:34	F	Ironman Hamburg 2026
-	Holly Lawrence	GBR	00:50:31 (2)	04:35:39 (9)		DNF	F	Ironman Hamburg 2026
-	Justine Guerard	FRA	00:54:53 (10)	04:42:31 (14)		DNF	F	Ironman Hamburg 2026
-	Lisa Gerss	GER	01:02:36 (20)	04:51:12 (22)		DNF	F	Ironman Hamburg 2026
-	Merle Brunnee	GER	01:09:04 (24)	04:49:46 (21)		DNF	F	Ironman Hamburg 2026
-	Gabriela Kaczka-Sanak	POL	01:09:07 (25)	05:01:58 (24)		DNF	F	Ironman Hamburg 2026
-	Stephanie Wunderle	GER	01:09:16 (26)			DNF	F	Ironman Hamburg 2026
+1	Casper Stornes	NOR	00:49:32 (16)	02:43:03 (2)	01:12:19 (1)	4:50:23	M	Ironman Frankfurt 2026
+2	Gustav Iden	NOR	00:49:46 (25)	02:43:18 (3)	01:14:55 (6)	4:52:54	M	Ironman Frankfurt 2026
+3	Antonio Benito Lopez	ESP	00:49:30 (14)	02:45:32 (7)	01:14:37 (4)	4:54:47	M	Ironman Frankfurt 2026
+4	Kacper Stepniak	POL	00:49:18 (2)	02:45:52 (8)	01:15:01 (7)	4:55:15	M	Ironman Frankfurt 2026
+5	Vincent Luis	FRA	00:49:23 (5)	02:47:22 (15)	01:13:56 (2)	4:55:46	M	Ironman Frankfurt 2026
+6	Michele Sarzilla	ITA	00:49:19 (3)	02:47:48 (17)	01:14:09 (3)	4:56:27	M	Ironman Frankfurt 2026
+7	Jamie Riddle	ZAF	00:49:16 (1)	02:43:49 (4)	01:18:23 (15)	4:56:38	M	Ironman Frankfurt 2026
+8	Nathan Guerbeur	FRA	00:49:42 (24)	02:41:59 (1)	01:20:16 (21)	4:56:50	M	Ironman Frankfurt 2026
+9	Kieran Lindars	GBR	00:49:29 (12)	02:47:19 (14)	01:14:51 (5)	4:57:02	M	Ironman Frankfurt 2026
+10	Jan Stratmann	GER	00:49:25 (8)	02:45:58 (9)	01:17:08 (10)	4:57:35	M	Ironman Frankfurt 2026
+11	Magnus Ditlev	DEN	00:49:39 (19)	02:46:50 (11)	01:15:36 (9)	4:58:15	M	Ironman Frankfurt 2026
+12	Wilhelm Hirsch	GER	00:49:20 (4)	02:46:03 (10)	01:19:36 (18)	4:59:49	M	Ironman Frankfurt 2026
+13	Andrea Salvisberg	SUI	00:49:27 (10)	02:46:52 (12)	01:18:19 (14)	4:59:57	M	Ironman Frankfurt 2026
+14	Niek Heldoorn	NED	00:49:41 (22)	02:47:13 (13)	01:19:33 (17)	5:01:15	M	Ironman Frankfurt 2026
+15	Brock Hoel	CAN	00:49:26 (9)	02:50:45 (20)	01:17:34 (11)	5:02:58	M	Ironman Frankfurt 2026
+16	Nick Emde	GER	00:49:47 (26)	02:45:23 (6)	01:23:00 (32)	5:03:32	M	Ironman Frankfurt 2026
+17	Pamphiel Pareyn	BEL	00:49:23 (5)	02:47:34 (16)	01:22:00 (29)	5:03:56	M	Ironman Frankfurt 2026
+18	Henrik Goesch	FIN	00:49:39 (19)	02:51:46 (23)	01:17:58 (13)	5:04:48	M	Ironman Frankfurt 2026
+19	Sven Oliver Thalmann	SUI	00:49:27 (10)	02:51:04 (21)	01:20:36 (23)	5:06:05	M	Ironman Frankfurt 2026
+20	Ruben Zepuntke	GER	00:49:40 (21)	02:45:18 (5)	01:25:54 (37)	5:06:44	M	Ironman Frankfurt 2026
+21	Paul Schuster	GER	00:49:34 (17)	02:52:58 (25)	01:19:36 (18)	5:07:14	M	Ironman Frankfurt 2026
+22	Jonas Hoffmann	GER	00:53:35 (30)	02:54:13 (27)	01:15:13 (8)	5:08:23	M	Ironman Frankfurt 2026
+23	Valentin Rouvier	FRA	00:49:31 (15)	02:49:17 (18)	01:24:55 (34)	5:09:03	M	Ironman Frankfurt 2026
+24	Gregory Barnaby	ITA	00:49:23 (5)	02:50:26 (19)	01:25:00 (35)	5:10:29	M	Ironman Frankfurt 2026
+25	Michiel Stockman	BEL	00:58:37 (43)	02:51:36 (22)	01:17:45 (12)	5:13:22	M	Ironman Frankfurt 2026
+26	Julian Becker	GER	00:52:15 (27)	02:55:12 (29)	01:20:38 (24)	5:14:18	M	Ironman Frankfurt 2026
+27	Joao Ferreira	POR	00:53:41 (34)	02:55:25 (31)	01:19:59 (20)	5:14:35	M	Ironman Frankfurt 2026
+28	Quentin Barreau	FRA	00:49:35 (18)	02:59:27 (36)	01:21:29 (28)	5:15:58	M	Ironman Frankfurt 2026
+29	Vincent Groesser	GER	00:57:09 (41)	02:52:44 (24)	01:21:20 (27)	5:16:37	M	Ironman Frankfurt 2026
+30	Brecht Van Vooren	BEL	00:52:18 (28)	02:55:47 (32)	01:23:54 (33)	5:18:20	M	Ironman Frankfurt 2026
+31	Chris Beckmans	AUS	00:58:38 (46)	02:54:06 (26)	01:20:54 (25)	5:19:09	M	Ironman Frankfurt 2026
+32	Sander Heemeryck	BEL	00:57:07 (39)	02:59:16 (35)	01:18:47 (16)	5:20:47	M	Ironman Frankfurt 2026
+33	Yvan Jarrige	FRA	00:57:04 (37)	02:58:15 (34)	01:20:59 (26)	5:22:17	M	Ironman Frankfurt 2026
+34	Marc Eggeling	GER	00:53:40 (33)	02:55:18 (30)	01:29:01 (41)	5:23:58	M	Ironman Frankfurt 2026
+35	Leon Chevalier	FRA	00:57:08 (40)	03:01:12 (38)	01:22:24 (30)	5:26:46	M	Ironman Frankfurt 2026
+36	Piotr Lawicki	POL	00:58:37 (43)	02:58:10 (33)	01:25:39 (36)	5:27:38	M	Ironman Frankfurt 2026
+37	Eyal Weinstein	ISR	00:53:39 (32)	03:09:00 (43)	01:22:54 (31)	5:31:18	M	Ironman Frankfurt 2026
+38	Dries Matthys	BEL	00:54:20 (36)	02:55:01 (28)	01:37:42 (44)	5:32:18	M	Ironman Frankfurt 2026
+39	Lukas Stahl	GER	00:58:37 (43)	03:00:06 (37)	01:30:15 (42)	5:35:58	M	Ironman Frankfurt 2026
+40	Pascal Tischler	GER	00:53:36 (31)	03:08:45 (42)	01:28:44 (40)	5:36:45	M	Ironman Frankfurt 2026
+41	Florian Kandutsch	AUT	00:58:35 (42)	03:03:23 (39)	01:28:35 (39)	5:37:10	M	Ironman Frankfurt 2026
+42	Louis Heukemes	BEL	00:57:06 (38)	03:12:44 (44)	01:20:31 (22)	5:37:20	M	Ironman Frankfurt 2026
+43	Finn Große-Freese	GER	00:49:29 (12)	03:04:02 (41)	01:43:30 (45)	5:43:39	M	Ironman Frankfurt 2026
+44	Thomas Bosch	GER	01:05:27 (48)	03:03:29 (40)	01:31:06 (43)	5:46:19	M	Ironman Frankfurt 2026
+45	Andrzej Michalski	POL	01:08:00 (49)	03:13:22 (45)	01:27:12 (38)	5:55:02	M	Ironman Frankfurt 2026
+	Maximilian Sperl	GER	00:49:41 (22)	04:06:23 (46)		DNF	M	Ironman Frankfurt 2026
+	Pieter Heemeryck	BEL	00:52:33 (29)			DNF	M	Ironman Frankfurt 2026
+	Mathieu Merland	FRA	00:53:42 (35)			DNF	M	Ironman Frankfurt 2026
+	Dylan Thissen	NED	00:58:38 (46)			DNF	M	Ironman Frankfurt 2026

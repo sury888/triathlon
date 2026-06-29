@@ -92,6 +92,7 @@ errors.push("You must select exactly one underdog pick.");
 } else {
 const underdog = underdogs[0];
 
+
 const entry = race.startList.find(
 a => a.athlete.toString() === underdog.athlete.toString()
 );

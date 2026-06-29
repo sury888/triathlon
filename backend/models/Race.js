@@ -43,7 +43,7 @@ const raceSchema = new mongoose.Schema({
   startList: [
     {
       athlete: { type: mongoose.Schema.Types.ObjectId, ref: "Athlete", required: true },
-      startRank: { type: Number, required: true },
+      startRank: { type: Number, required: false },
       athleteName: String, // denormalized for easier access
     }
   ],

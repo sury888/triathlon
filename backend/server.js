@@ -1,3 +1,5 @@
+console.log("SERVER FILE LOADED");
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');

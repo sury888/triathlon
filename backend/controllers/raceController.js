@@ -557,205 +557,213 @@ console.error("Scored races error:", err);
 res.status(500).json({ error: "Server error" });
 }
 };
-
 exports.processResults = async (req, res) => {
-try {
-const raceId = req.params.id;
-const race = await Race.findById(raceId);
-// ⭐ Private races use Ironman 70.3 scoring
-// if (race.isPrivate) {
-//   race.series = "Ironman 70.3 Pro Series";
-// }
+  try {
+    const raceId = req.params.id;
+    const race = await Race.findById(raceId);
 
-if (!race) return res.status(404).json({ error: "Race not found" });
+    if (!race) return res.status(404).json({ error: "Race not found" });
 
-if (race.status !== "Closed" && race.status !== "Finished and Scored") {
-return res.status(403).json({
-error: "Race must be Closed or Finished and Scored",
-currentStatus: race.status
-});
-}
+    if (race.status !== "Closed" && race.status !== "Finished and Scored") {
+      return res.status(403).json({
+        error: "Race must be Closed or Finished and Scored",
+        currentStatus: race.status
+      });
+    }
 
-const { results: inputResults } = req.body;
+    const { results: inputResults } = req.body;
 
-if (!Array.isArray(inputResults) || inputResults.length === 0) {
-return res.status(400).json({ error: "Results must be a non-empty array" });
-}
+    if (!Array.isArray(inputResults) || inputResults.length === 0) {
+      return res.status(400).json({ error: "Results must be a non-empty array" });
+    }
 
-// Prior course records
-const priorSwimCR = race.swimCourseRecord ?? 0;
-const priorBikeCR = race.bikeCourseRecord ?? 0;
-const priorRunCR = race.runCourseRecord ?? 0;
-const priorTotalCR = race.totalCourseRecord ?? 0;
+    // Prior course records
+    const priorSwimCR = race.swimCourseRecord ?? 0;
+    const priorBikeCR = race.bikeCourseRecord ?? 0;
+    const priorRunCR = race.runCourseRecord ?? 0;
+    const priorTotalCR = race.totalCourseRecord ?? 0;
 
-let dnfCount = 0;
-const finishers = [];
-const rawEntries = [];
-const unmatchedAthletes = [];
+    let dnfCount = 0;
+    const finishers = [];
+    const rawEntries = [];
+    const unmatchedAthletes = [];
 
-const parseTime = (val) => {
-const num = Number(val);
-return (typeof num === "number" && !isNaN(num)) ? num : null;
+    const parseTime = (val) => {
+      const num = Number(val);
+      return (typeof num === "number" && !isNaN(num)) ? num : null;
+    };
+
+    for (const resEntry of inputResults) {
+      if (!resEntry.name || !resEntry.country) continue;
+
+      const normalizedCountry = normalizeCountry(resEntry.country);
+
+      const athlete = await Athlete.findOne({
+        name: { $regex: new RegExp(`^${resEntry.name.trim()}$`, "i") },
+        country: { $regex: new RegExp(`^${normalizedCountry}$`, "i") }
+      }).select("_id name gender country");
+
+      if (!athlete) {
+        unmatchedAthletes.push({
+          name: resEntry.name,
+          country: resEntry.country,
+          gender: resEntry.gender || null
+        });
+        continue;
+      }
+
+      const entry = {
+        athlete: athlete._id,
+        athleteName: athlete.name,
+        place: Number(resEntry.rank) || null,
+        totalTimeSeconds: parseTime(resEntry.totalTime),
+        swimTimeSeconds: parseTime(resEntry.swimTime),
+        bikeTimeSeconds: parseTime(resEntry.bikeTime),
+        runTimeSeconds: parseTime(resEntry.runTime),
+        status: (!resEntry.rank && !resEntry.totalTime)
+          ? "DNF"
+          : (resEntry.status || (resEntry.rank ? "Finished" : "DNF")),
+        startRank: Number(resEntry.startRank) || null
+      };
+
+      rawEntries.push(entry);
+
+      if (entry.status !== "Finished" || entry.totalTimeSeconds === null) {
+        dnfCount++;
+        continue;
+      }
+
+      finishers.push(entry);
+    }
+
+    if (unmatchedAthletes.length > 0) {
+      return res.status(400).json({
+        error: "Some athletes could not be matched",
+        unmatchedAthletes
+      });
+    }
+
+    // SCORE FINISHERS
+    const scoredFinishers = scoreRace(
+      finishers,
+      race.series,
+      priorSwimCR,
+      priorBikeCR,
+      priorRunCR,
+      priorTotalCR,
+      race.startList || []
+    );
+
+    // MERGE scoring into raw entries
+    const finalResultsForRace = rawEntries.map(raw => {
+      const scored = scoredFinishers.find(s => s.athlete.equals(raw.athlete));
+      return {
+        ...raw,
+        score: scored ? scored.score : (raw.status !== "Finished" ? -10 : 0),
+        breakdown: scored ? scored.breakdown : null
+      };
+    });
+
+    // ⭐ DUPLICATE-SAFE ATHLETE SCORE UPDATES
+    for (const result of finalResultsForRace) {
+      if (!result.athlete) continue;
+
+      const athlete = await Athlete.findById(result.athlete);
+      if (!athlete) continue;
+
+      const existing = athlete.raceScores.find(
+        r => r.raceId && r.raceId.toString() === race._id.toString()
+      );
+
+      const raceScoreObj = {
+        race: race._id,
+        raceId: race._id,
+        place: result.place,
+        location: race.location || '',
+        date: race.date || null,
+        score: Number.isFinite(result.score) ? result.score : 0,
+        breakdown: result.breakdown || {
+          placementPoints: 0,
+          timeBonus: 0,
+          splitBonus: 0,
+          splitBreakdown: { swim: 0, bike: 0, run: 0 },
+          underdogBonus: 0,
+          gain: 0,
+          recordBonus: 0,
+          totalScore: 0
+        },
+        status: result.status || "Finished"
+      };
+
+      if (existing) {
+        Object.assign(existing, raceScoreObj);
+      } else {
+        athlete.raceScores.push(raceScoreObj);
+      }
+
+      await athlete.save();
+    }
+
+    // FASTEST SPLITS
+    const fastest = { swim: null, bike: null, run: null };
+    ["swim", "bike", "run"].forEach(dis => {
+      const key = `${dis}TimeSeconds`;
+      const valid = finishers.filter(f => f[key] !== null);
+      if (valid.length === 0) return;
+      fastest[dis] = valid.sort((a, b) => a[key] - b[key])[0].athlete;
+    });
+
+    // UPDATE COURSE RECORDS
+    const newSwimRecord = fastest.swim ? finishers.find(f => f.athlete.equals(fastest.swim))?.swimTimeSeconds : null;
+    const newBikeRecord = fastest.bike ? finishers.find(f => f.athlete.equals(fastest.bike))?.bikeTimeSeconds : null;
+    const newRunRecord = fastest.run ? finishers.find(f => f.athlete.equals(fastest.run))?.runTimeSeconds : null;
+
+    const validTotals = finishers.map(f => f.totalTimeSeconds).filter(t => t !== null);
+    const newTotalRecord = validTotals.length > 0 ? Math.min(...validTotals) : null;
+
+    const updateSwimCR = (priorSwimCR === 0 || (newSwimRecord !== null && newSwimRecord < priorSwimCR)) ? newSwimRecord : priorSwimCR;
+    const updateBikeCR = (priorBikeCR === 0 || (newBikeRecord !== null && newBikeRecord < priorBikeCR)) ? newBikeRecord : priorBikeCR;
+    const updateRunCR = (priorRunCR === 0 || (newRunRecord !== null && newRunRecord < priorRunCR)) ? newRunRecord : priorRunCR;
+    const updateTotalCR = (priorTotalCR === 0 || (newTotalRecord !== null && newTotalRecord < priorTotalCR)) ? newTotalRecord : priorTotalCR;
+
+    // SAVE RESULTS TO RACE
+    await Race.findByIdAndUpdate(raceId, {
+      $set: {
+        results: finalResultsForRace,
+        dnfCount,
+        fastestSwim: fastest.swim,
+        fastestBike: fastest.bike,
+        fastestRun: fastest.run,
+        swimCourseRecord: updateSwimCR,
+        bikeCourseRecord: updateBikeCR,
+        runCourseRecord: updateRunCR,
+        totalCourseRecord: updateTotalCR,
+        status: "Finished and Scored"
+      }
+    });
+
+    // SCORE FANTASY PICKS
+    const fantasyPicksScored = await scoreFantasyPicksForRace(
+      raceId,
+      finalResultsForRace,
+      fastest,
+      race.name
+    );
+
+    res.json({
+      message: "Results processed successfully",
+      finishers: finishers.length,
+      dnfCount,
+      unmatched: unmatchedAthletes.length,
+      fantasyPicksScored
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error", details: err.message });
+  }
 };
 
-for (const resEntry of inputResults) {
-if (!resEntry.name || !resEntry.country) continue;
-
-// Normalize country BEFORE matching
-const normalizedCountry = normalizeCountry(resEntry.country);
-
-const athlete = await Athlete.findOne({
-name: { $regex: new RegExp(`^${resEntry.name.trim()}$`, "i") },
-country: { $regex: new RegExp(`^${normalizedCountry}$`, "i") }
-}).select("_id name gender country");
-
-/*
-const athlete = await Athlete.findOne({
-name: { $regex: new RegExp(`^${resEntry.name.trim()}$`, "i") },
-country: { $regex: new RegExp(`^${resEntry.country.trim()}$`, "i") }
-}).select("_id name gender country");
-*/
-if (!athlete) {
-unmatchedAthletes.push({
-name: resEntry.name,
-country: resEntry.country,
-gender: resEntry.gender || null
-});
-continue;
-}
-
-const entry = {
-athlete: athlete._id,
-athleteName: athlete.name,
-place: Number(resEntry.rank) || null,
-totalTimeSeconds: parseTime(resEntry.totalTime),
-swimTimeSeconds: parseTime(resEntry.swimTime),
-bikeTimeSeconds: parseTime(resEntry.bikeTime),
-runTimeSeconds: parseTime(resEntry.runTime),
-status: (!resEntry.rank && !resEntry.totalTime) ? "DNF" : (resEntry.status || (resEntry.rank ? "Finished" : "DNF")),
-startRank: Number(resEntry.startRank) || null
-};
-
-rawEntries.push(entry);
-
-if (entry.status !== "Finished" || entry.totalTimeSeconds === null) {
-dnfCount++;
-continue;
-}
-
-finishers.push(entry);
-}
-
-if (unmatchedAthletes.length > 0) {
-return res.status(400).json({
-error: "Some athletes could not be matched",
-unmatchedAthletes
-});
-}
-
-// SCORE FINISHERS (your helper function)
-const scoredFinishers = scoreRace(
-finishers,
-race.series,
-priorSwimCR,
-priorBikeCR,
-priorRunCR,
-priorTotalCR,
-race.startList || []
-);
-
-// MERGE scoring into raw entries
-const finalResultsForRace = rawEntries.map(raw => {
-const scored = scoredFinishers.find(s => s.athlete.equals(raw.athlete));
-return {
-...raw,
-score: scored ? scored.score : (raw.status !== "Finished" ? -10 : 0),
-breakdown: scored ? scored.breakdown : null
-};
-});
-
-// ✅ NEW: Push scores to Athlete model
-for (const result of finalResultsForRace) {
-if (!result.athlete) continue;
-
-await Athlete.findByIdAndUpdate(
-result.athlete,
-{
-$push: {
-raceScores: {
-race: race.name,
-raceId: race._id,
-place: result.place,
-location: race.location || '',
-date: race.date || null,
-score: result.score,
-breakdown: result.breakdown || {},
-status: result.status || "Finished"
-}
-}
-}
-);
-}
-
-// FASTEST SPLITS
-const fastest = { swim: null, bike: null, run: null };
-["swim", "bike", "run"].forEach(dis => {
-const key = `${dis}TimeSeconds`;
-const valid = finishers.filter(f => f[key] !== null);
-if (valid.length === 0) return;
-fastest[dis] = valid.sort((a, b) => a[key] - b[key])[0].athlete;
-});
-
-// UPDATE COURSE RECORDS
-const newSwimRecord = fastest.swim ? finishers.find(f => f.athlete.equals(fastest.swim))?.swimTimeSeconds : null;
-const newBikeRecord = fastest.bike ? finishers.find(f => f.athlete.equals(fastest.bike))?.bikeTimeSeconds : null;
-const newRunRecord = fastest.run ? finishers.find(f => f.athlete.equals(fastest.run))?.runTimeSeconds : null;
-
-const validTotals = finishers.map(f => f.totalTimeSeconds).filter(t => t !== null);
-const newTotalRecord = validTotals.length > 0 ? Math.min(...validTotals) : null;
-
-const updateSwimCR = (priorSwimCR === 0 || (newSwimRecord !== null && newSwimRecord < priorSwimCR)) ? newSwimRecord : priorSwimCR;
-const updateBikeCR = (priorBikeCR === 0 || (newBikeRecord !== null && newBikeRecord < priorBikeCR)) ? newBikeRecord : priorBikeCR;
-const updateRunCR = (priorRunCR === 0 || (newRunRecord !== null && newRunRecord < priorRunCR)) ? newRunRecord : priorRunCR;
-const updateTotalCR = (priorTotalCR === 0 || (newTotalRecord !== null && newTotalRecord < priorTotalCR)) ? newTotalRecord : priorTotalCR;
-
-// SAVE RESULTS TO RACE
-await Race.findByIdAndUpdate(raceId, {
-$set: {
-results: finalResultsForRace,
-dnfCount,
-fastestSwim: fastest.swim,
-fastestBike: fastest.bike,
-fastestRun: fastest.run,
-swimCourseRecord: updateSwimCR,
-bikeCourseRecord: updateBikeCR,
-runCourseRecord: updateRunCR,
-totalCourseRecord: updateTotalCR,
-status: "Finished and Scored"
-}
-});
-
-// SCORE FANTASY PICKS
-const fantasyPicksScored = await scoreFantasyPicksForRace(
-raceId,
-finalResultsForRace,
-fastest,
-race.name
-);
-
-res.json({
-message: "Results processed successfully",
-finishers: finishers.length,
-dnfCount,
-unmatched: unmatchedAthletes.length,
-fantasyPicksScored
-});
-
-} catch (err) {
-console.error("Process results error:", err);
-res.status(500).json({ error: "Server error", details: err.message });
-}
-};
 // raceController.js
 exports.setSideBetsConfig = async (req, res) => {
 try {
