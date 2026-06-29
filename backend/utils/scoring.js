@@ -118,11 +118,22 @@ splitBreakdown[dis] = 1;
 });
 
 // Underdog bonus — prefer results startRank, fall back to start list
+// ⭐ Normalize startRank: prefer results, fallback to startList
 let startRank = finisher.startRank;
-if (startRank == null && startList.length > 0) {
-const slEntry = startList.find(s => s.athlete.toString() === finisher.athlete.toString());
-if (slEntry) startRank = slEntry.startRank;
+
+// If results didn't include startRank, pull from startList
+if (startRank == null) {
+  const slEntry = startList.find(s =>
+    s.athlete.toString() === finisher.athlete.toString()
+  );
+  startRank = slEntry?.startRank ?? null;
 }
+
+// Ensure startRank is numeric or null
+if (startRank !== null && !Number.isFinite(startRank)) {
+  startRank = null;
+}
+
 const place = finisher.place;
 
 let underdogBonus = 0;

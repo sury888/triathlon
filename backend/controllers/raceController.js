@@ -625,6 +625,12 @@ exports.processResults = async (req, res) => {
           : (resEntry.status || (resEntry.rank ? "Finished" : "DNF")),
         startRank: Number(resEntry.startRank) || null
       };
+      // Normalize startRank: if results didn't include it, pull from startList
+entry.startRank =
+  entry.startRank === null
+    ? (race.startList.find(a => a.athlete.equals(entry.athlete))?.startRank ?? null)
+    : entry.startRank;
+
 
       rawEntries.push(entry);
 
